@@ -1,0 +1,3 @@
+[submodule "TVM-auto/third_party/tvm"]
+	path = TVM-auto/third_party/tvm
+	url = https://github.com/apache/tvm.git

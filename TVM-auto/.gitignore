@@ -1,0 +1,21 @@
+# Ignore all build artifacts
+TVM-auto/third_party/tvm/build/
+TVM-auto/third_party/tvm/dist/
+TVM-auto/third_party/tvm/python/tvm.egg-info/
+TVM-auto/third_party/tvm/__pycache__/
+TVM-auto/third_party/tvm/python/__pycache__/
+
+# Ignore venv or conda envs
+venv/
+.env/
+*.env
+*.egg-info/
+
+# Editor and OS files
+*.swp
+.DS_Store
+*.pyc
+__pycache__/
+
+# Jupyter
+.ipynb_checkpoints/

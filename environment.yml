@@ -1,0 +1,24 @@
+name: OPT-einsum
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.10
+  - pip
+  - cmake>=3.18
+  - ninja                     # Faster build system (TVM recommends it)
+  - llvmdev=11                # LLVM headers and libs (used by TVM)
+  - libffi                    # Needed by TVM FFI
+  - gxx_linux-64>=11          # For C++17 support
+  - numpy
+  - psutil
+  - cloudpickle
+  - xgboost
+  - tqdm
+  - pip:
+      - cython                # For building TVM's Python bindings
+      - typing_extensions     # For meta_schedule typing
+      - packaging             # Used in TVM imports
+      - ml_dtypes             # Required by TVM
+      - pyyaml                # Used by Ultralytics and possibly TVM
+      - filelock              # Required by PyTorch and some meta_schedule ops
