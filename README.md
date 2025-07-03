@@ -21,4 +21,3 @@ git clone --recursive https://github.com/Theoo1997/OPT-einsum.git
 cd OPT-einsum
 conda env create -f environment.yml
 conda activate OPT-einsum
-./TVM-auto/scripts/run_all.sh         # builds TVM, tunes 512 trials, benchmarks

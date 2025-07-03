@@ -1,0 +1,13 @@
+2025-07-03 10:14:03 [INFO] Logging directory: /data/theo/projects/Tiling/OPT-einsum/TVM-auto/Kernels/Einsum3D/128x510x8x112/ms_log_einsum_mb/logs
+2025-07-03 10:14:12 [INFO] [task_scheduler.cc:165] Initializing Task #0: "main"
+2025-07-03 10:14:12 [INFO] [task_scheduler.cc:326] 
+ ID | Name |      FLOP | Weight | Speed (GFLOPS) | Latency (us) | Weighted Latency (us) | Trials | Done 
+--------------------------------------------------------------------------------------------------------
+  0 | main | 116981760 |      1 |            N/A |          N/A |                   N/A |      0 |      
+--------------------------------------------------------------------------------------------------------
+Total trials: 0
+Total latency (us): 0
+
+2025-07-03 10:14:12 [INFO] [task_scheduler.cc:186] TaskScheduler picks Task #0: "main"
+2025-07-03 10:14:12 [INFO] [task_scheduler.cc:199] Sending 64 sample(s) to builder
+2025-07-03 10:14:45 [INFO] [task_scheduler.cc:201] Sending 64 sample(s) to runner

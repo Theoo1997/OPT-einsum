@@ -1,0 +1,1225 @@
+2025-07-02 19:31:29 [INFO] [task_scheduler.cc:166] Initializing Task #0: "main"
+2025-07-02 19:31:29 [INFO] [task_scheduler.cc:41] 
+# from tvm.script import ir as I
+# from tvm.script import tir as T
+
+@I.ir_module
+class Module:
+    @T.prim_func
+    def main(A_mat: T.Buffer((512, 500), "float32"), B_mat: T.Buffer((128, 128), "float32"), X: T.Buffer((500, 128), "float32"), Y: T.Buffer((512, 128), "float32")):
+        T.func_attr({"tir.noalias": True})
+        # with T.block("root"):
+        for dd, ee, ra, rb in T.grid(512, 128, 500, 128):
+            with T.block("Y"):
+                v_dd, v_ee, v_ra, v_rb = T.axis.remap("SSRR", [dd, ee, ra, rb])
+                T.reads(A_mat[v_dd, v_ra], X[v_ra, v_rb], B_mat[v_rb, v_ee])
+                T.writes(Y[v_dd, v_ee])
+                with T.init():
+                    Y[v_dd, v_ee] = T.float32(0.0)
+                Y[v_dd, v_ee] = Y[v_dd, v_ee] + A_mat[v_dd, v_ra] * X[v_ra, v_rb] * B_mat[v_rb, v_ee]
+2025-07-02 19:31:29 [INFO] [task_scheduler.cc:170] Total 3 design space(s) generated
+2025-07-02 19:31:29 [INFO] [task_scheduler.cc:176] Design space #0:
+# from tvm.script import ir as I
+# from tvm.script import tir as T
+
+@I.ir_module
+class Module:
+    @T.prim_func
+    def main(A_mat: T.Buffer((512, 500), "float32"), B_mat: T.Buffer((128, 128), "float32"), X: T.Buffer((500, 128), "float32"), Y: T.Buffer((512, 128), "float32")):
+        T.func_attr({"tir.noalias": True})
+        with T.block("root"):
+            T.reads()
+            T.writes()
+            T.block_attr({"meta_schedule.parallel": 128, "meta_schedule.unroll_explicit": 512, "meta_schedule.vectorize": 64})
+            Y_global = T.alloc_buffer((512, 128))
+            for dd_0, ee_0, dd_1, ee_1 in T.grid(64, 1, 1, 16):
+                for ra_0, rb_0, dd_2, ee_2, ra_1, rb_1, dd_3, ee_3 in T.grid(20, 128, 8, 1, 25, 1, 1, 8):
+                    with T.block("Y"):
+                        v_dd = T.axis.spatial(512, dd_0 * 8 + dd_1 * 8 + dd_2 + dd_3)
+                        v_ee = T.axis.spatial(128, ee_0 * 128 + ee_1 * 8 + ee_2 * 8 + ee_3)
+                        v_ra = T.axis.reduce(500, ra_0 * 25 + ra_1)
+                        v_rb = T.axis.reduce(128, rb_0 + rb_1)
+                        T.reads(A_mat[v_dd, v_ra], X[v_ra, v_rb], B_mat[v_rb, v_ee])
+                        T.writes(Y_global[v_dd, v_ee])
+                        T.block_attr({"meta_schedule.tiling_structure": "SSRSRS"})
+                        with T.init():
+                            Y_global[v_dd, v_ee] = T.float32(0.0)
+                        Y_global[v_dd, v_ee] = Y_global[v_dd, v_ee] + A_mat[v_dd, v_ra] * X[v_ra, v_rb] * B_mat[v_rb, v_ee]
+                for ax0, ax1 in T.grid(8, 8):
+                    with T.block("Y_global"):
+                        v0 = T.axis.spatial(512, dd_0 * 8 + ax0)
+                        v1 = T.axis.spatial(128, ee_1 * 8 + ax1)
+                        T.reads(Y_global[v0, v1])
+                        T.writes(Y[v0, v1])
+                        Y[v0, v1] = Y_global[v0, v1]
+b0 = sch.get_block(name="Y", func_name="main")
+b1 = sch.get_block(name="root", func_name="main")
+sch.annotate(block_or_loop=b0, ann_key="meta_schedule.tiling_structure", ann_val="SSRSRS")
+l2, l3, l4, l5 = sch.get_loops(block=b0)
+v6, v7, v8, v9 = sch.sample_perfect_tile(loop=l2, n=4, max_innermost_factor=64, decision=[64, 1, 8, 1])
+l10, l11, l12, l13 = sch.split(loop=l2, factors=[v6, v7, v8, v9], preserve_unit_iters=True, disable_predication=False)
+v14, v15, v16, v17 = sch.sample_perfect_tile(loop=l3, n=4, max_innermost_factor=64, decision=[1, 16, 1, 8])
+l18, l19, l20, l21 = sch.split(loop=l3, factors=[v14, v15, v16, v17], preserve_unit_iters=True, disable_predication=False)
+v22, v23 = sch.sample_perfect_tile(loop=l4, n=2, max_innermost_factor=64, decision=[20, 25])
+l24, l25 = sch.split(loop=l4, factors=[v22, v23], preserve_unit_iters=True, disable_predication=False)
+v26, v27 = sch.sample_perfect_tile(loop=l5, n=2, max_innermost_factor=64, decision=[128, 1])
+l28, l29 = sch.split(loop=l5, factors=[v26, v27], preserve_unit_iters=True, disable_predication=False)
+sch.reorder(l10, l18, l11, l19, l24, l28, l12, l20, l25, l29, l13, l21)
+b30 = sch.cache_write(block=b0, write_buffer_index=0, storage_scope="global")
+sch.reverse_compute_at(block=b30, loop=l19, preserve_unit_loops=True, index=-1)
+sch.annotate(block_or_loop=b1, ann_key="meta_schedule.parallel", ann_val=128)
+sch.annotate(block_or_loop=b1, ann_key="meta_schedule.vectorize", ann_val=64)
+v31 = sch.sample_categorical(candidates=[0, 16, 64, 512], probs=[0.25, 0.25, 0.25, 0.25], decision=3)
+sch.annotate(block_or_loop=b1, ann_key="meta_schedule.unroll_explicit", ann_val=v31)
+2025-07-02 19:31:29 [INFO] [task_scheduler.cc:176] Design space #1:
+# from tvm.script import ir as I
+# from tvm.script import tir as T
+
+@I.ir_module
+class Module:
+    @T.prim_func
+    def main(A_mat: T.Buffer((512, 500), "float32"), B_mat: T.Buffer((128, 128), "float32"), X: T.Buffer((500, 128), "float32"), Y: T.Buffer((512, 128), "float32")):
+        T.func_attr({"tir.noalias": True})
+        with T.block("root"):
+            T.reads()
+            T.writes()
+            T.block_attr({"meta_schedule.parallel": 128, "meta_schedule.unroll_explicit": 16, "meta_schedule.vectorize": 64})
+            Y_global = T.alloc_buffer((512, 128))
+            for dd_0, ee_0 in T.grid(64, 1):
+                for dd_1, ee_1, ra_0, rb_0, dd_2, ee_2, ra_1, rb_1, dd_3, ee_3 in T.grid(1, 16, 20, 128, 8, 1, 25, 1, 1, 8):
+                    with T.block("Y"):
+                        v_dd = T.axis.spatial(512, dd_0 * 8 + dd_1 * 8 + dd_2 + dd_3)
+                        v_ee = T.axis.spatial(128, ee_0 * 128 + ee_1 * 8 + ee_2 * 8 + ee_3)
+                        v_ra = T.axis.reduce(500, ra_0 * 25 + ra_1)
+                        v_rb = T.axis.reduce(128, rb_0 + rb_1)
+                        T.reads(A_mat[v_dd, v_ra], X[v_ra, v_rb], B_mat[v_rb, v_ee])
+                        T.writes(Y_global[v_dd, v_ee])
+                        T.block_attr({"meta_schedule.tiling_structure": "SSRSRS"})
+                        with T.init():
+                            Y_global[v_dd, v_ee] = T.float32(0.0)
+                        Y_global[v_dd, v_ee] = Y_global[v_dd, v_ee] + A_mat[v_dd, v_ra] * X[v_ra, v_rb] * B_mat[v_rb, v_ee]
+                for ax0, ax1 in T.grid(8, 128):
+                    with T.block("Y_global"):
+                        v0 = T.axis.spatial(512, dd_0 * 8 + ax0)
+                        v1 = T.axis.spatial(128, ax1)
+                        T.reads(Y_global[v0, v1])
+                        T.writes(Y[v0, v1])
+                        Y[v0, v1] = Y_global[v0, v1]
+b0 = sch.get_block(name="Y", func_name="main")
+b1 = sch.get_block(name="root", func_name="main")
+sch.annotate(block_or_loop=b0, ann_key="meta_schedule.tiling_structure", ann_val="SSRSRS")
+l2, l3, l4, l5 = sch.get_loops(block=b0)
+v6, v7, v8, v9 = sch.sample_perfect_tile(loop=l2, n=4, max_innermost_factor=64, decision=[64, 1, 8, 1])
+l10, l11, l12, l13 = sch.split(loop=l2, factors=[v6, v7, v8, v9], preserve_unit_iters=True, disable_predication=False)
+v14, v15, v16, v17 = sch.sample_perfect_tile(loop=l3, n=4, max_innermost_factor=64, decision=[1, 16, 1, 8])
+l18, l19, l20, l21 = sch.split(loop=l3, factors=[v14, v15, v16, v17], preserve_unit_iters=True, disable_predication=False)
+v22, v23 = sch.sample_perfect_tile(loop=l4, n=2, max_innermost_factor=64, decision=[20, 25])
+l24, l25 = sch.split(loop=l4, factors=[v22, v23], preserve_unit_iters=True, disable_predication=False)
+v26, v27 = sch.sample_perfect_tile(loop=l5, n=2, max_innermost_factor=64, decision=[128, 1])
+l28, l29 = sch.split(loop=l5, factors=[v26, v27], preserve_unit_iters=True, disable_predication=False)
+sch.reorder(l10, l18, l11, l19, l24, l28, l12, l20, l25, l29, l13, l21)
+b30 = sch.cache_write(block=b0, write_buffer_index=0, storage_scope="global")
+sch.reverse_compute_at(block=b30, loop=l18, preserve_unit_loops=True, index=-1)
+sch.annotate(block_or_loop=b1, ann_key="meta_schedule.parallel", ann_val=128)
+sch.annotate(block_or_loop=b1, ann_key="meta_schedule.vectorize", ann_val=64)
+v31 = sch.sample_categorical(candidates=[0, 16, 64, 512], probs=[0.25, 0.25, 0.25, 0.25], decision=1)
+sch.annotate(block_or_loop=b1, ann_key="meta_schedule.unroll_explicit", ann_val=v31)
+2025-07-02 19:31:29 [INFO] [task_scheduler.cc:176] Design space #2:
+# from tvm.script import ir as I
+# from tvm.script import tir as T
+
+@I.ir_module
+class Module:
+    @T.prim_func
+    def main(A_mat: T.Buffer((512, 500), "float32"), B_mat: T.Buffer((128, 128), "float32"), X: T.Buffer((500, 128), "float32"), Y: T.Buffer((512, 128), "float32")):
+        T.func_attr({"tir.noalias": True})
+        with T.block("root"):
+            T.reads()
+            T.writes()
+            T.block_attr({"meta_schedule.parallel": 128, "meta_schedule.unroll_explicit": 0, "meta_schedule.vectorize": 64})
+            for dd_0, ee_0, dd_1, ee_1, ra_0, rb_0, dd_2, ee_2, ra_1, rb_1, dd_3, ee_3 in T.grid(64, 1, 1, 16, 20, 128, 8, 1, 25, 1, 1, 8):
+                with T.block("Y"):
+                    v_dd = T.axis.spatial(512, dd_0 * 8 + dd_1 * 8 + dd_2 + dd_3)
+                    v_ee = T.axis.spatial(128, ee_0 * 128 + ee_1 * 8 + ee_2 * 8 + ee_3)
+                    v_ra = T.axis.reduce(500, ra_0 * 25 + ra_1)
+                    v_rb = T.axis.reduce(128, rb_0 + rb_1)
+                    T.reads(A_mat[v_dd, v_ra], X[v_ra, v_rb], B_mat[v_rb, v_ee])
+                    T.writes(Y[v_dd, v_ee])
+                    T.block_attr({"meta_schedule.tiling_structure": "SSRSRS"})
+                    with T.init():
+                        Y[v_dd, v_ee] = T.float32(0.0)
+                    Y[v_dd, v_ee] = Y[v_dd, v_ee] + A_mat[v_dd, v_ra] * X[v_ra, v_rb] * B_mat[v_rb, v_ee]
+b0 = sch.get_block(name="Y", func_name="main")
+b1 = sch.get_block(name="root", func_name="main")
+sch.annotate(block_or_loop=b0, ann_key="meta_schedule.tiling_structure", ann_val="SSRSRS")
+l2, l3, l4, l5 = sch.get_loops(block=b0)
+v6, v7, v8, v9 = sch.sample_perfect_tile(loop=l2, n=4, max_innermost_factor=64, decision=[64, 1, 8, 1])
+l10, l11, l12, l13 = sch.split(loop=l2, factors=[v6, v7, v8, v9], preserve_unit_iters=True, disable_predication=False)
+v14, v15, v16, v17 = sch.sample_perfect_tile(loop=l3, n=4, max_innermost_factor=64, decision=[1, 16, 1, 8])
+l18, l19, l20, l21 = sch.split(loop=l3, factors=[v14, v15, v16, v17], preserve_unit_iters=True, disable_predication=False)
+v22, v23 = sch.sample_perfect_tile(loop=l4, n=2, max_innermost_factor=64, decision=[20, 25])
+l24, l25 = sch.split(loop=l4, factors=[v22, v23], preserve_unit_iters=True, disable_predication=False)
+v26, v27 = sch.sample_perfect_tile(loop=l5, n=2, max_innermost_factor=64, decision=[128, 1])
+l28, l29 = sch.split(loop=l5, factors=[v26, v27], preserve_unit_iters=True, disable_predication=False)
+sch.reorder(l10, l18, l11, l19, l24, l28, l12, l20, l25, l29, l13, l21)
+sch.annotate(block_or_loop=b1, ann_key="meta_schedule.parallel", ann_val=128)
+sch.annotate(block_or_loop=b1, ann_key="meta_schedule.vectorize", ann_val=64)
+v30 = sch.sample_categorical(candidates=[0, 16, 64, 512], probs=[0.25, 0.25, 0.25, 0.25], decision=0)
+sch.annotate(block_or_loop=b1, ann_key="meta_schedule.unroll_explicit", ann_val=v30)
+2025-07-02 19:39:31 [INFO] [task_scheduler.cc:137] [Task #0: main] Trial #1: GFLOPs: 211.5135. Time: 59489.8647 us. Best GFLOPs: 211.5135
+2025-07-02 19:39:31 [INFO] [task_scheduler.cc:137] [Task #0: main] Trial #2: GFLOPs: 102.9505. Time: 122222.9708 us. Best GFLOPs: 211.5135
+2025-07-02 19:39:31 [INFO] [task_scheduler.cc:137] [Task #0: main] Trial #3: GFLOPs: 61.6057. Time: 204249.2467 us. Best GFLOPs: 211.5135
+2025-07-02 19:39:31 [INFO] [task_scheduler.cc:137] [Task #0: main] Trial #4: GFLOPs: 26.6129. Time: 472812.8357 us. Best GFLOPs: 211.5135
+2025-07-02 19:39:31 [INFO] [task_scheduler.cc:137] [Task #0: main] Trial #5: GFLOPs: 482.0865. Time: 26100.9442 us. Best GFLOPs: 482.0865
+2025-07-02 19:39:31 [INFO] [task_scheduler.cc:137] [Task #0: main] Trial #6: GFLOPs: 646.6130. Time: 19459.7264 us. Best GFLOPs: 646.6130
+2025-07-02 19:39:31 [INFO] [task_scheduler.cc:137] [Task #0: main] Trial #7: GFLOPs: 198.9035. Time: 63261.3905 us. Best GFLOPs: 646.6130
+2025-07-02 19:39:31 [INFO] [task_scheduler.cc:127] [Task #0: main] Trial #8: Error in running:
+LocalRunner: Timeout, killed after 30 seconds
+
+# from tvm.script import ir as I
+# from tvm.script import tir as T
+
+@I.ir_module
+class Module:
+    @T.prim_func
+    def main(A_mat: T.Buffer((512, 500), "float32"), B_mat: T.Buffer((128, 128), "float32"), X: T.Buffer((500, 128), "float32"), Y: T.Buffer((512, 128), "float32")):
+        T.func_attr({"tir.noalias": True})
+        # with T.block("root"):
+        Y_global = T.alloc_buffer((512, 128))
+        for dd_0_ee_0_fused in T.parallel(2, annotations={"pragma_auto_unroll_max_step": 64, "pragma_unroll_explicit": 1}):
+            for dd_1, ee_1 in T.grid(1, 8):
+                for dd_2_init, ee_2_init, dd_3_init, ee_3_init in T.grid(256, 16, 1, 1):
+                    with T.block("Y_init"):
+                        v_dd = T.axis.spatial(512, dd_0_ee_0_fused * 256 + dd_1 * 256 + dd_2_init + dd_3_init)
+                        v_ee = T.axis.spatial(128, ee_1 * 16 + ee_2_init + ee_3_init)
+                        T.reads()
+                        T.writes(Y_global[v_dd, v_ee])
+                        T.block_attr({"meta_schedule.tiling_structure": "SSRSRS"})
+                        Y_global[v_dd, v_ee] = T.float32(0.0)
+                for ra_0, rb_0, dd_2, ee_2, ra_1, rb_1, dd_3, ee_3 in T.grid(10, 8, 256, 16, 50, 16, 1, 1):
+                    with T.block("Y_update"):
+                        v_dd = T.axis.spatial(512, dd_0_ee_0_fused * 256 + dd_1 * 256 + dd_2 + dd_3)
+                        v_ee = T.axis.spatial(128, ee_1 * 16 + ee_2 + ee_3)
+                        v_ra = T.axis.reduce(500, ra_0 * 50 + ra_1)
+                        v_rb = T.axis.reduce(128, rb_0 * 16 + rb_1)
+                        T.reads(Y_global[v_dd, v_ee], A_mat[v_dd, v_ra], X[v_ra, v_rb], B_mat[v_rb, v_ee])
+                        T.writes(Y_global[v_dd, v_ee])
+                        T.block_attr({"meta_schedule.tiling_structure": "SSRSRS"})
+                        Y_global[v_dd, v_ee] = Y_global[v_dd, v_ee] + A_mat[v_dd, v_ra] * X[v_ra, v_rb] * B_mat[v_rb, v_ee]
+            for ax0, ax1 in T.grid(256, 128):
+                with T.block("Y_global"):
+                    v0 = T.axis.spatial(512, dd_0_ee_0_fused * 256 + ax0)
+                    v1 = T.axis.spatial(128, ax1)
+                    T.reads(Y_global[v0, v1])
+                    T.writes(Y[v0, v1])
+                    Y[v0, v1] = Y_global[v0, v1]
+b0 = sch.get_block(name="Y", func_name="main")
+b1 = sch.get_block(name="root", func_name="main")
+sch.annotate(block_or_loop=b0, ann_key="meta_schedule.tiling_structure", ann_val="SSRSRS")
+l2, l3, l4, l5 = sch.get_loops(block=b0)
+v6, v7, v8, v9 = sch.sample_perfect_tile(loop=l2, n=4, max_innermost_factor=64, decision=[2, 1, 256, 1])
+l10, l11, l12, l13 = sch.split(loop=l2, factors=[v6, v7, v8, v9], preserve_unit_iters=True, disable_predication=False)
+v14, v15, v16, v17 = sch.sample_perfect_tile(loop=l3, n=4, max_innermost_factor=64, decision=[1, 8, 16, 1])
+l18, l19, l20, l21 = sch.split(loop=l3, factors=[v14, v15, v16, v17], preserve_unit_iters=True, disable_predication=False)
+v22, v23 = sch.sample_perfect_tile(loop=l4, n=2, max_innermost_factor=64, decision=[10, 50])
+l24, l25 = sch.split(loop=l4, factors=[v22, v23], preserve_unit_iters=True, disable_predication=False)
+v26, v27 = sch.sample_perfect_tile(loop=l5, n=2, max_innermost_factor=64, decision=[8, 16])
+l28, l29 = sch.split(loop=l5, factors=[v26, v27], preserve_unit_iters=True, disable_predication=False)
+sch.reorder(l10, l18, l11, l19, l24, l28, l12, l20, l25, l29, l13, l21)
+b30 = sch.cache_write(block=b0, write_buffer_index=0, storage_scope="global")
+sch.reverse_compute_at(block=b30, loop=l18, preserve_unit_loops=True, index=-1)
+sch.annotate(block_or_loop=b1, ann_key="meta_schedule.parallel", ann_val=128)
+sch.annotate(block_or_loop=b1, ann_key="meta_schedule.vectorize", ann_val=64)
+v31 = sch.sample_categorical(candidates=[0, 16, 64, 512], probs=[0.25, 0.25, 0.25, 0.25], decision=2)
+sch.annotate(block_or_loop=b1, ann_key="meta_schedule.unroll_explicit", ann_val=v31)
+sch.enter_postproc()
+b32 = sch.get_block(name="root", func_name="main")
+sch.unannotate(block_or_loop=b32, ann_key="meta_schedule.parallel")
+sch.unannotate(block_or_loop=b32, ann_key="meta_schedule.vectorize")
+sch.unannotate(block_or_loop=b32, ann_key="meta_schedule.unroll_explicit")
+b33, b34 = sch.get_child_blocks(b32)
+l35, l36, l37, l38, l39, l40, l41, l42, l43, l44, l45, l46 = sch.get_loops(block=b33)
+l47 = sch.fuse(l35, l36, preserve_unit_iters=True)
+sch.parallel(loop=l47)
+sch.annotate(block_or_loop=l47, ann_key="pragma_auto_unroll_max_step", ann_val=64)
+sch.annotate(block_or_loop=l47, ann_key="pragma_unroll_explicit", ann_val=1)
+l48, l49, l50 = sch.get_loops(block=b34)
+b51 = sch.get_block(name="Y", func_name="main")
+l52, l53, l54, l55, l56, l57, l58, l59, l60, l61, l62 = sch.get_loops(block=b51)
+b63 = sch.decompose_reduction(block=b51, loop=l55)
+2025-07-02 19:39:31 [INFO] [task_scheduler.cc:137] [Task #0: main] Trial #9: GFLOPs: 73.4515. Time: 171309.1712 us. Best GFLOPs: 646.6130
+2025-07-02 19:39:31 [INFO] [task_scheduler.cc:137] [Task #0: main] Trial #10: GFLOPs: 1188.1995. Time: 10589.8984 us. Best GFLOPs: 1188.1995
+2025-07-02 19:39:31 [INFO] [task_scheduler.cc:137] [Task #0: main] Trial #11: GFLOPs: 166.5706. Time: 75541.0187 us. Best GFLOPs: 1188.1995
+2025-07-02 19:39:31 [INFO] [task_scheduler.cc:137] [Task #0: main] Trial #12: GFLOPs: 270.0732. Time: 46590.7512 us. Best GFLOPs: 1188.1995
+2025-07-02 19:39:31 [INFO] [task_scheduler.cc:137] [Task #0: main] Trial #13: GFLOPs: 1177.5494. Time: 10685.6763 us. Best GFLOPs: 1188.1995
+2025-07-02 19:39:31 [INFO] [task_scheduler.cc:137] [Task #0: main] Trial #14: GFLOPs: 893.1220. Time: 14088.6828 us. Best GFLOPs: 1188.1995
+2025-07-02 19:39:31 [INFO] [task_scheduler.cc:137] [Task #0: main] Trial #15: GFLOPs: 316.7547. Time: 39724.4725 us. Best GFLOPs: 1188.1995
+2025-07-02 19:39:31 [INFO] [task_scheduler.cc:137] [Task #0: main] Trial #16: GFLOPs: 172.3933. Time: 72989.5590 us. Best GFLOPs: 1188.1995
+2025-07-02 19:39:31 [INFO] [task_scheduler.cc:137] [Task #0: main] Trial #17: GFLOPs: 134.6903. Time: 93421.0550 us. Best GFLOPs: 1188.1995
+2025-07-02 19:39:31 [INFO] [task_scheduler.cc:137] [Task #0: main] Trial #18: GFLOPs: 563.3133. Time: 22337.3236 us. Best GFLOPs: 1188.1995
+2025-07-02 19:39:31 [INFO] [task_scheduler.cc:137] [Task #0: main] Trial #19: GFLOPs: 375.6603. Time: 33495.4550 us. Best GFLOPs: 1188.1995
+2025-07-02 19:39:31 [INFO] [task_scheduler.cc:127] [Task #0: main] Trial #20: Error in running:
+LocalRunner: Timeout, killed after 30 seconds
+
+# from tvm.script import ir as I
+# from tvm.script import tir as T
+
+@I.ir_module
+class Module:
+    @T.prim_func
+    def main(A_mat: T.Buffer((512, 500), "float32"), B_mat: T.Buffer((128, 128), "float32"), X: T.Buffer((500, 128), "float32"), Y: T.Buffer((512, 128), "float32")):
+        T.func_attr({"tir.noalias": True})
+        # with T.block("root"):
+        for dd_0_ee_0_dd_1_ee_1_fused in T.parallel(64, annotations={"pragma_auto_unroll_max_step": 16, "pragma_unroll_explicit": 1}):
+            for dd_2_init, ee_2_init, dd_3_init in T.grid(4, 1, 64):
+                for ee_3_fused_init in T.vectorized(4):
+                    with T.block("Y_init"):
+                        v_dd = T.axis.spatial(512, dd_0_ee_0_dd_1_ee_1_fused // 32 * 256 + dd_2_init * 64 + dd_3_init)
+                        v_ee = T.axis.spatial(128, dd_0_ee_0_dd_1_ee_1_fused % 32 * 4 + ee_2_init * 4 + ee_3_fused_init)
+                        T.reads()
+                        T.writes(Y[v_dd, v_ee])
+                        T.block_attr({"meta_schedule.tiling_structure": "SSRSRS"})
+                        Y[v_dd, v_ee] = T.float32(0.0)
+            for ra_0, rb_0, dd_2, ee_2, ra_1, rb_1, dd_3 in T.grid(500, 8, 4, 1, 1, 16, 64):
+                for ee_3_fused in T.vectorized(4):
+                    with T.block("Y_update"):
+                        v_dd = T.axis.spatial(512, dd_0_ee_0_dd_1_ee_1_fused // 32 * 256 + dd_2 * 64 + dd_3)
+                        v_ee = T.axis.spatial(128, dd_0_ee_0_dd_1_ee_1_fused % 32 * 4 + ee_2 * 4 + ee_3_fused)
+                        v_ra = T.axis.reduce(500, ra_0 + ra_1)
+                        v_rb = T.axis.reduce(128, rb_0 * 16 + rb_1)
+                        T.reads(Y[v_dd, v_ee], A_mat[v_dd, v_ra], X[v_ra, v_rb], B_mat[v_rb, v_ee])
+                        T.writes(Y[v_dd, v_ee])
+                        T.block_attr({"meta_schedule.tiling_structure": "SSRSRS"})
+                        Y[v_dd, v_ee] = Y[v_dd, v_ee] + A_mat[v_dd, v_ra] * X[v_ra, v_rb] * B_mat[v_rb, v_ee]
+b0 = sch.get_block(name="Y", func_name="main")
+b1 = sch.get_block(name="root", func_name="main")
+sch.annotate(block_or_loop=b0, ann_key="meta_schedule.tiling_structure", ann_val="SSRSRS")
+l2, l3, l4, l5 = sch.get_loops(block=b0)
+v6, v7, v8, v9 = sch.sample_perfect_tile(loop=l2, n=4, max_innermost_factor=64, decision=[2, 1, 4, 64])
+l10, l11, l12, l13 = sch.split(loop=l2, factors=[v6, v7, v8, v9], preserve_unit_iters=True, disable_predication=False)
+v14, v15, v16, v17 = sch.sample_perfect_tile(loop=l3, n=4, max_innermost_factor=64, decision=[4, 8, 1, 4])
+l18, l19, l20, l21 = sch.split(loop=l3, factors=[v14, v15, v16, v17], preserve_unit_iters=True, disable_predication=False)
+v22, v23 = sch.sample_perfect_tile(loop=l4, n=2, max_innermost_factor=64, decision=[500, 1])
+l24, l25 = sch.split(loop=l4, factors=[v22, v23], preserve_unit_iters=True, disable_predication=False)
+v26, v27 = sch.sample_perfect_tile(loop=l5, n=2, max_innermost_factor=64, decision=[8, 16])
+l28, l29 = sch.split(loop=l5, factors=[v26, v27], preserve_unit_iters=True, disable_predication=False)
+sch.reorder(l10, l18, l11, l19, l24, l28, l12, l20, l25, l29, l13, l21)
+sch.annotate(block_or_loop=b1, ann_key="meta_schedule.parallel", ann_val=128)
+sch.annotate(block_or_loop=b1, ann_key="meta_schedule.vectorize", ann_val=64)
+v30 = sch.sample_categorical(candidates=[0, 16, 64, 512], probs=[0.25, 0.25, 0.25, 0.25], decision=1)
+sch.annotate(block_or_loop=b1, ann_key="meta_schedule.unroll_explicit", ann_val=v30)
+sch.enter_postproc()
+b31 = sch.get_block(name="root", func_name="main")
+sch.unannotate(block_or_loop=b31, ann_key="meta_schedule.parallel")
+sch.unannotate(block_or_loop=b31, ann_key="meta_schedule.vectorize")
+sch.unannotate(block_or_loop=b31, ann_key="meta_schedule.unroll_explicit")
+b32, = sch.get_child_blocks(b31)
+l33, l34, l35, l36, l37, l38, l39, l40, l41, l42, l43, l44 = sch.get_loops(block=b32)
+l45 = sch.fuse(l33, l34, l35, l36, preserve_unit_iters=True)
+sch.parallel(loop=l45)
+l46 = sch.fuse(l44, preserve_unit_iters=True)
+sch.vectorize(loop=l46)
+sch.annotate(block_or_loop=l45, ann_key="pragma_auto_unroll_max_step", ann_val=16)
+sch.annotate(block_or_loop=l45, ann_key="pragma_unroll_explicit", ann_val=1)
+b47 = sch.get_block(name="Y", func_name="main")
+l48, l49, l50, l51, l52, l53, l54, l55, l56 = sch.get_loops(block=b47)
+b57 = sch.decompose_reduction(block=b47, loop=l49)
+2025-07-02 19:39:31 [INFO] [task_scheduler.cc:137] [Task #0: main] Trial #21: GFLOPs: 144.7476. Time: 86930.0302 us. Best GFLOPs: 1188.1995
+2025-07-02 19:39:31 [INFO] [task_scheduler.cc:137] [Task #0: main] Trial #22: GFLOPs: 28.2010. Time: 446186.2523 us. Best GFLOPs: 1188.1995
+2025-07-02 19:39:31 [INFO] [task_scheduler.cc:137] [Task #0: main] Trial #23: GFLOPs: 155.2814. Time: 81032.9831 us. Best GFLOPs: 1188.1995
+2025-07-02 19:39:31 [INFO] [task_scheduler.cc:137] [Task #0: main] Trial #24: GFLOPs: 133.7433. Time: 94082.5851 us. Best GFLOPs: 1188.1995
+2025-07-02 19:39:31 [INFO] [task_scheduler.cc:137] [Task #0: main] Trial #25: GFLOPs: 333.6977. Time: 37707.5211 us. Best GFLOPs: 1188.1995
+2025-07-02 19:39:31 [INFO] [task_scheduler.cc:137] [Task #0: main] Trial #26: GFLOPs: 40.0160. Time: 314447.0360 us. Best GFLOPs: 1188.1995
+2025-07-02 19:39:31 [INFO] [task_scheduler.cc:137] [Task #0: main] Trial #27: GFLOPs: 202.8467. Time: 62031.6317 us. Best GFLOPs: 1188.1995
+2025-07-02 19:39:31 [INFO] [task_scheduler.cc:137] [Task #0: main] Trial #28: GFLOPs: 94.4478. Time: 133226.0665 us. Best GFLOPs: 1188.1995
+2025-07-02 19:39:31 [INFO] [task_scheduler.cc:137] [Task #0: main] Trial #29: GFLOPs: 58.6257. Time: 214631.1927 us. Best GFLOPs: 1188.1995
+2025-07-02 19:39:31 [INFO] [task_scheduler.cc:137] [Task #0: main] Trial #30: GFLOPs: 39.0494. Time: 322230.2093 us. Best GFLOPs: 1188.1995
+2025-07-02 19:39:31 [INFO] [task_scheduler.cc:137] [Task #0: main] Trial #31: GFLOPs: 244.7647. Time: 51408.1885 us. Best GFLOPs: 1188.1995
+2025-07-02 19:39:31 [INFO] [task_scheduler.cc:137] [Task #0: main] Trial #32: GFLOPs: 944.7857. Time: 13318.2709 us. Best GFLOPs: 1188.1995
+2025-07-02 19:39:31 [INFO] [task_scheduler.cc:137] [Task #0: main] Trial #33: GFLOPs: 502.0714. Time: 25061.9971 us. Best GFLOPs: 1188.1995
+2025-07-02 19:39:31 [INFO] [task_scheduler.cc:137] [Task #0: main] Trial #34: GFLOPs: 59.3228. Time: 212109.0338 us. Best GFLOPs: 1188.1995
+2025-07-02 19:39:31 [INFO] [task_scheduler.cc:137] [Task #0: main] Trial #35: GFLOPs: 176.5603. Time: 71266.9515 us. Best GFLOPs: 1188.1995
+2025-07-02 19:39:31 [INFO] [task_scheduler.cc:137] [Task #0: main] Trial #36: GFLOPs: 109.4555. Time: 114959.1232 us. Best GFLOPs: 1188.1995
+2025-07-02 19:39:31 [INFO] [task_scheduler.cc:137] [Task #0: main] Trial #37: GFLOPs: 191.8077. Time: 65601.7198 us. Best GFLOPs: 1188.1995
+2025-07-02 19:39:31 [INFO] [task_scheduler.cc:137] [Task #0: main] Trial #38: GFLOPs: 155.4121. Time: 80964.8148 us. Best GFLOPs: 1188.1995
+2025-07-02 19:39:31 [INFO] [task_scheduler.cc:137] [Task #0: main] Trial #39: GFLOPs: 87.1323. Time: 144411.5483 us. Best GFLOPs: 1188.1995
+2025-07-02 19:39:31 [INFO] [task_scheduler.cc:137] [Task #0: main] Trial #40: GFLOPs: 860.6885. Time: 14619.5891 us. Best GFLOPs: 1188.1995
+2025-07-02 19:39:31 [INFO] [task_scheduler.cc:137] [Task #0: main] Trial #41: GFLOPs: 154.1204. Time: 81643.3703 us. Best GFLOPs: 1188.1995
+2025-07-02 19:39:31 [INFO] [task_scheduler.cc:137] [Task #0: main] Trial #42: GFLOPs: 127.5134. Time: 98679.1400 us. Best GFLOPs: 1188.1995
+2025-07-02 19:39:31 [INFO] [task_scheduler.cc:137] [Task #0: main] Trial #43: GFLOPs: 37.8400. Time: 332529.6589 us. Best GFLOPs: 1188.1995
+2025-07-02 19:39:31 [INFO] [task_scheduler.cc:137] [Task #0: main] Trial #44: GFLOPs: 143.0020. Time: 87991.1413 us. Best GFLOPs: 1188.1995
+2025-07-02 19:39:31 [INFO] [task_scheduler.cc:137] [Task #0: main] Trial #45: GFLOPs: 221.5691. Time: 56790.0091 us. Best GFLOPs: 1188.1995
+2025-07-02 19:39:31 [INFO] [task_scheduler.cc:137] [Task #0: main] Trial #46: GFLOPs: 52.7663. Time: 238464.7155 us. Best GFLOPs: 1188.1995
+2025-07-02 19:39:31 [INFO] [task_scheduler.cc:137] [Task #0: main] Trial #47: GFLOPs: 509.6582. Time: 24688.9242 us. Best GFLOPs: 1188.1995
+2025-07-02 19:39:31 [INFO] [task_scheduler.cc:137] [Task #0: main] Trial #48: GFLOPs: 216.2853. Time: 58177.3694 us. Best GFLOPs: 1188.1995
+2025-07-02 19:39:31 [INFO] [task_scheduler.cc:137] [Task #0: main] Trial #49: GFLOPs: 154.9134. Time: 81225.4328 us. Best GFLOPs: 1188.1995
+2025-07-02 19:39:31 [INFO] [task_scheduler.cc:137] [Task #0: main] Trial #50: GFLOPs: 240.8285. Time: 52248.4408 us. Best GFLOPs: 1188.1995
+2025-07-02 19:39:31 [INFO] [task_scheduler.cc:137] [Task #0: main] Trial #51: GFLOPs: 286.4562. Time: 43926.1231 us. Best GFLOPs: 1188.1995
+2025-07-02 19:39:31 [INFO] [task_scheduler.cc:137] [Task #0: main] Trial #52: GFLOPs: 106.5991. Time: 118039.5336 us. Best GFLOPs: 1188.1995
+2025-07-02 19:39:31 [INFO] [task_scheduler.cc:137] [Task #0: main] Trial #53: GFLOPs: 126.7440. Time: 99278.1478 us. Best GFLOPs: 1188.1995
+2025-07-02 19:39:31 [INFO] [task_scheduler.cc:137] [Task #0: main] Trial #54: GFLOPs: 211.4372. Time: 59511.3358 us. Best GFLOPs: 1188.1995
+2025-07-02 19:39:31 [INFO] [task_scheduler.cc:137] [Task #0: main] Trial #55: GFLOPs: 30.5696. Time: 411615.4529 us. Best GFLOPs: 1188.1995
+2025-07-02 19:39:31 [INFO] [task_scheduler.cc:137] [Task #0: main] Trial #56: GFLOPs: 364.6601. Time: 34505.8623 us. Best GFLOPs: 1188.1995
+2025-07-02 19:39:31 [INFO] [task_scheduler.cc:137] [Task #0: main] Trial #57: GFLOPs: 101.7318. Time: 123687.1669 us. Best GFLOPs: 1188.1995
+2025-07-02 19:39:31 [INFO] [task_scheduler.cc:137] [Task #0: main] Trial #58: GFLOPs: 280.6694. Time: 44831.7950 us. Best GFLOPs: 1188.1995
+2025-07-02 19:39:31 [INFO] [task_scheduler.cc:137] [Task #0: main] Trial #59: GFLOPs: 165.9815. Time: 75809.1057 us. Best GFLOPs: 1188.1995
+2025-07-02 19:39:31 [INFO] [task_scheduler.cc:137] [Task #0: main] Trial #60: GFLOPs: 135.0282. Time: 93187.2995 us. Best GFLOPs: 1188.1995
+2025-07-02 19:39:31 [INFO] [task_scheduler.cc:137] [Task #0: main] Trial #61: GFLOPs: 237.9137. Time: 52888.5634 us. Best GFLOPs: 1188.1995
+2025-07-02 19:39:31 [INFO] [task_scheduler.cc:137] [Task #0: main] Trial #62: GFLOPs: 135.6647. Time: 92750.0967 us. Best GFLOPs: 1188.1995
+2025-07-02 19:39:31 [INFO] [task_scheduler.cc:137] [Task #0: main] Trial #63: GFLOPs: 581.7079. Time: 21630.9796 us. Best GFLOPs: 1188.1995
+2025-07-02 19:39:31 [INFO] [task_scheduler.cc:137] [Task #0: main] Trial #64: GFLOPs: 755.7801. Time: 16648.9056 us. Best GFLOPs: 1188.1995
+2025-07-03 10:34:23 [INFO] [task_scheduler.cc:166] Initializing Task #0: "main"
+2025-07-03 10:34:23 [INFO] [task_scheduler.cc:41] 
+# from tvm.script import ir as I
+# from tvm.script import tir as T
+
+@I.ir_module
+class Module:
+    @T.prim_func
+    def main(A_mat: T.Buffer((512, 500), "float32"), B_mat: T.Buffer((128, 128), "float32"), X: T.Buffer((500, 128), "float32"), Y: T.Buffer((512, 128), "float32")):
+        T.func_attr({"tir.noalias": True})
+        # with T.block("root"):
+        for dd, ee, ra, rb in T.grid(512, 128, 500, 128):
+            with T.block("Y"):
+                v_dd, v_ee, v_ra, v_rb = T.axis.remap("SSRR", [dd, ee, ra, rb])
+                T.reads(A_mat[v_dd, v_ra], X[v_ra, v_rb], B_mat[v_rb, v_ee])
+                T.writes(Y[v_dd, v_ee])
+                with T.init():
+                    Y[v_dd, v_ee] = T.float32(0.0)
+                Y[v_dd, v_ee] = Y[v_dd, v_ee] + A_mat[v_dd, v_ra] * X[v_ra, v_rb] * B_mat[v_rb, v_ee]
+2025-07-03 10:34:23 [INFO] [multi_level_tiling_with_intrin.cc:52] The workload cannot be tensorized.
+2025-07-03 10:34:23 [INFO] [multi_level_tiling_with_intrin.cc:52] The workload cannot be tensorized.
+2025-07-03 10:34:23 [INFO] [task_scheduler.cc:170] Total 3 design space(s) generated
+2025-07-03 10:34:23 [INFO] [task_scheduler.cc:176] Design space #0:
+# from tvm.script import ir as I
+# from tvm.script import tir as T
+
+@I.ir_module
+class Module:
+    @T.prim_func
+    def main(A_mat: T.Buffer((512, 500), "float32"), B_mat: T.Buffer((128, 128), "float32"), X: T.Buffer((500, 128), "float32"), Y: T.Buffer((512, 128), "float32")):
+        T.func_attr({"tir.noalias": True})
+        with T.block("root"):
+            T.reads()
+            T.writes()
+            T.block_attr({"meta_schedule.parallel": 64, "meta_schedule.unroll_explicit": 0, "meta_schedule.vectorize": 64})
+            Y_global = T.alloc_buffer((512, 128))
+            for dd_0, ee_0, dd_1, ee_1 in T.grid(2, 1, 2, 32):
+                for ra_0, rb_0, dd_2, ee_2, ra_1, rb_1, dd_3, ee_3 in T.grid(250, 16, 2, 2, 2, 8, 64, 2):
+                    with T.block("Y"):
+                        v_dd = T.axis.spatial(512, dd_0 * 256 + dd_1 * 128 + dd_2 * 64 + dd_3)
+                        v_ee = T.axis.spatial(128, ee_0 * 128 + ee_1 * 4 + ee_2 * 2 + ee_3)
+                        v_ra = T.axis.reduce(500, ra_0 * 2 + ra_1)
+                        v_rb = T.axis.reduce(128, rb_0 * 8 + rb_1)
+                        T.reads(A_mat[v_dd, v_ra], X[v_ra, v_rb], B_mat[v_rb, v_ee])
+                        T.writes(Y_global[v_dd, v_ee])
+                        T.block_attr({"meta_schedule.tiling_structure": "SSRSRS"})
+                        with T.init():
+                            Y_global[v_dd, v_ee] = T.float32(0.0)
+                        Y_global[v_dd, v_ee] = Y_global[v_dd, v_ee] + A_mat[v_dd, v_ra] * X[v_ra, v_rb] * B_mat[v_rb, v_ee]
+                for ax0, ax1 in T.grid(128, 4):
+                    with T.block("Y_global"):
+                        v0 = T.axis.spatial(512, dd_0 * 256 + dd_1 * 128 + ax0)
+                        v1 = T.axis.spatial(128, ee_1 * 4 + ax1)
+                        T.reads(Y_global[v0, v1])
+                        T.writes(Y[v0, v1])
+                        Y[v0, v1] = Y_global[v0, v1]
+b0 = sch.get_block(name="Y", func_name="main")
+b1 = sch.get_block(name="root", func_name="main")
+sch.annotate(block_or_loop=b0, ann_key="meta_schedule.tiling_structure", ann_val="SSRSRS")
+l2, l3, l4, l5 = sch.get_loops(block=b0)
+v6, v7, v8, v9 = sch.sample_perfect_tile(loop=l2, n=4, max_innermost_factor=64, decision=[2, 2, 2, 64])
+l10, l11, l12, l13 = sch.split(loop=l2, factors=[v6, v7, v8, v9], preserve_unit_iters=True, disable_predication=False)
+v14, v15, v16, v17 = sch.sample_perfect_tile(loop=l3, n=4, max_innermost_factor=64, decision=[1, 32, 2, 2])
+l18, l19, l20, l21 = sch.split(loop=l3, factors=[v14, v15, v16, v17], preserve_unit_iters=True, disable_predication=False)
+v22, v23 = sch.sample_perfect_tile(loop=l4, n=2, max_innermost_factor=64, decision=[250, 2])
+l24, l25 = sch.split(loop=l4, factors=[v22, v23], preserve_unit_iters=True, disable_predication=False)
+v26, v27 = sch.sample_perfect_tile(loop=l5, n=2, max_innermost_factor=64, decision=[16, 8])
+l28, l29 = sch.split(loop=l5, factors=[v26, v27], preserve_unit_iters=True, disable_predication=False)
+sch.reorder(l10, l18, l11, l19, l24, l28, l12, l20, l25, l29, l13, l21)
+b30 = sch.cache_write(block=b0, write_buffer_index=0, storage_scope="global")
+sch.reverse_compute_at(block=b30, loop=l19, preserve_unit_loops=True, index=-1)
+sch.annotate(block_or_loop=b1, ann_key="meta_schedule.parallel", ann_val=64)
+sch.annotate(block_or_loop=b1, ann_key="meta_schedule.vectorize", ann_val=64)
+v31 = sch.sample_categorical(candidates=[0, 16, 64, 512], probs=[0.25, 0.25, 0.25, 0.25], decision=0)
+sch.annotate(block_or_loop=b1, ann_key="meta_schedule.unroll_explicit", ann_val=v31)
+2025-07-03 10:34:23 [INFO] [task_scheduler.cc:176] Design space #1:
+# from tvm.script import ir as I
+# from tvm.script import tir as T
+
+@I.ir_module
+class Module:
+    @T.prim_func
+    def main(A_mat: T.Buffer((512, 500), "float32"), B_mat: T.Buffer((128, 128), "float32"), X: T.Buffer((500, 128), "float32"), Y: T.Buffer((512, 128), "float32")):
+        T.func_attr({"tir.noalias": True})
+        with T.block("root"):
+            T.reads()
+            T.writes()
+            T.block_attr({"meta_schedule.parallel": 64, "meta_schedule.unroll_explicit": 16, "meta_schedule.vectorize": 64})
+            Y_global = T.alloc_buffer((512, 128))
+            for dd_0, ee_0 in T.grid(2, 1):
+                for dd_1, ee_1, ra_0, rb_0, dd_2, ee_2, ra_1, rb_1, dd_3, ee_3 in T.grid(2, 32, 250, 16, 2, 2, 2, 8, 64, 2):
+                    with T.block("Y"):
+                        v_dd = T.axis.spatial(512, dd_0 * 256 + dd_1 * 128 + dd_2 * 64 + dd_3)
+                        v_ee = T.axis.spatial(128, ee_0 * 128 + ee_1 * 4 + ee_2 * 2 + ee_3)
+                        v_ra = T.axis.reduce(500, ra_0 * 2 + ra_1)
+                        v_rb = T.axis.reduce(128, rb_0 * 8 + rb_1)
+                        T.reads(A_mat[v_dd, v_ra], X[v_ra, v_rb], B_mat[v_rb, v_ee])
+                        T.writes(Y_global[v_dd, v_ee])
+                        T.block_attr({"meta_schedule.tiling_structure": "SSRSRS"})
+                        with T.init():
+                            Y_global[v_dd, v_ee] = T.float32(0.0)
+                        Y_global[v_dd, v_ee] = Y_global[v_dd, v_ee] + A_mat[v_dd, v_ra] * X[v_ra, v_rb] * B_mat[v_rb, v_ee]
+                for ax0, ax1 in T.grid(256, 128):
+                    with T.block("Y_global"):
+                        v0 = T.axis.spatial(512, dd_0 * 256 + ax0)
+                        v1 = T.axis.spatial(128, ax1)
+                        T.reads(Y_global[v0, v1])
+                        T.writes(Y[v0, v1])
+                        Y[v0, v1] = Y_global[v0, v1]
+b0 = sch.get_block(name="Y", func_name="main")
+b1 = sch.get_block(name="root", func_name="main")
+sch.annotate(block_or_loop=b0, ann_key="meta_schedule.tiling_structure", ann_val="SSRSRS")
+l2, l3, l4, l5 = sch.get_loops(block=b0)
+v6, v7, v8, v9 = sch.sample_perfect_tile(loop=l2, n=4, max_innermost_factor=64, decision=[2, 2, 2, 64])
+l10, l11, l12, l13 = sch.split(loop=l2, factors=[v6, v7, v8, v9], preserve_unit_iters=True, disable_predication=False)
+v14, v15, v16, v17 = sch.sample_perfect_tile(loop=l3, n=4, max_innermost_factor=64, decision=[1, 32, 2, 2])
+l18, l19, l20, l21 = sch.split(loop=l3, factors=[v14, v15, v16, v17], preserve_unit_iters=True, disable_predication=False)
+v22, v23 = sch.sample_perfect_tile(loop=l4, n=2, max_innermost_factor=64, decision=[250, 2])
+l24, l25 = sch.split(loop=l4, factors=[v22, v23], preserve_unit_iters=True, disable_predication=False)
+v26, v27 = sch.sample_perfect_tile(loop=l5, n=2, max_innermost_factor=64, decision=[16, 8])
+l28, l29 = sch.split(loop=l5, factors=[v26, v27], preserve_unit_iters=True, disable_predication=False)
+sch.reorder(l10, l18, l11, l19, l24, l28, l12, l20, l25, l29, l13, l21)
+b30 = sch.cache_write(block=b0, write_buffer_index=0, storage_scope="global")
+sch.reverse_compute_at(block=b30, loop=l18, preserve_unit_loops=True, index=-1)
+sch.annotate(block_or_loop=b1, ann_key="meta_schedule.parallel", ann_val=64)
+sch.annotate(block_or_loop=b1, ann_key="meta_schedule.vectorize", ann_val=64)
+v31 = sch.sample_categorical(candidates=[0, 16, 64, 512], probs=[0.25, 0.25, 0.25, 0.25], decision=1)
+sch.annotate(block_or_loop=b1, ann_key="meta_schedule.unroll_explicit", ann_val=v31)
+2025-07-03 10:34:23 [INFO] [task_scheduler.cc:176] Design space #2:
+# from tvm.script import ir as I
+# from tvm.script import tir as T
+
+@I.ir_module
+class Module:
+    @T.prim_func
+    def main(A_mat: T.Buffer((512, 500), "float32"), B_mat: T.Buffer((128, 128), "float32"), X: T.Buffer((500, 128), "float32"), Y: T.Buffer((512, 128), "float32")):
+        T.func_attr({"tir.noalias": True})
+        with T.block("root"):
+            T.reads()
+            T.writes()
+            T.block_attr({"meta_schedule.parallel": 64, "meta_schedule.unroll_explicit": 512, "meta_schedule.vectorize": 64})
+            for dd_0, ee_0, dd_1, ee_1, ra_0, rb_0, dd_2, ee_2, ra_1, rb_1, dd_3, ee_3 in T.grid(2, 1, 2, 32, 250, 16, 2, 2, 2, 8, 64, 2):
+                with T.block("Y"):
+                    v_dd = T.axis.spatial(512, dd_0 * 256 + dd_1 * 128 + dd_2 * 64 + dd_3)
+                    v_ee = T.axis.spatial(128, ee_0 * 128 + ee_1 * 4 + ee_2 * 2 + ee_3)
+                    v_ra = T.axis.reduce(500, ra_0 * 2 + ra_1)
+                    v_rb = T.axis.reduce(128, rb_0 * 8 + rb_1)
+                    T.reads(A_mat[v_dd, v_ra], X[v_ra, v_rb], B_mat[v_rb, v_ee])
+                    T.writes(Y[v_dd, v_ee])
+                    T.block_attr({"meta_schedule.tiling_structure": "SSRSRS"})
+                    with T.init():
+                        Y[v_dd, v_ee] = T.float32(0.0)
+                    Y[v_dd, v_ee] = Y[v_dd, v_ee] + A_mat[v_dd, v_ra] * X[v_ra, v_rb] * B_mat[v_rb, v_ee]
+b0 = sch.get_block(name="Y", func_name="main")
+b1 = sch.get_block(name="root", func_name="main")
+sch.annotate(block_or_loop=b0, ann_key="meta_schedule.tiling_structure", ann_val="SSRSRS")
+l2, l3, l4, l5 = sch.get_loops(block=b0)
+v6, v7, v8, v9 = sch.sample_perfect_tile(loop=l2, n=4, max_innermost_factor=64, decision=[2, 2, 2, 64])
+l10, l11, l12, l13 = sch.split(loop=l2, factors=[v6, v7, v8, v9], preserve_unit_iters=True, disable_predication=False)
+v14, v15, v16, v17 = sch.sample_perfect_tile(loop=l3, n=4, max_innermost_factor=64, decision=[1, 32, 2, 2])
+l18, l19, l20, l21 = sch.split(loop=l3, factors=[v14, v15, v16, v17], preserve_unit_iters=True, disable_predication=False)
+v22, v23 = sch.sample_perfect_tile(loop=l4, n=2, max_innermost_factor=64, decision=[250, 2])
+l24, l25 = sch.split(loop=l4, factors=[v22, v23], preserve_unit_iters=True, disable_predication=False)
+v26, v27 = sch.sample_perfect_tile(loop=l5, n=2, max_innermost_factor=64, decision=[16, 8])
+l28, l29 = sch.split(loop=l5, factors=[v26, v27], preserve_unit_iters=True, disable_predication=False)
+sch.reorder(l10, l18, l11, l19, l24, l28, l12, l20, l25, l29, l13, l21)
+sch.annotate(block_or_loop=b1, ann_key="meta_schedule.parallel", ann_val=64)
+sch.annotate(block_or_loop=b1, ann_key="meta_schedule.vectorize", ann_val=64)
+v30 = sch.sample_categorical(candidates=[0, 16, 64, 512], probs=[0.25, 0.25, 0.25, 0.25], decision=3)
+sch.annotate(block_or_loop=b1, ann_key="meta_schedule.unroll_explicit", ann_val=v30)
+2025-07-03 10:34:37 [INFO] [task_scheduler.cc:137] [Task #0: main] Trial #1: GFLOPs: 70.5416. Time: 178375.7918 us. Best GFLOPs: 70.5416
+2025-07-03 10:37:27 [INFO] [task_scheduler.cc:166] Initializing Task #0: "main"
+2025-07-03 10:37:27 [INFO] [task_scheduler.cc:41] 
+# from tvm.script import ir as I
+# from tvm.script import tir as T
+
+@I.ir_module
+class Module:
+    @T.prim_func
+    def main(A_mat: T.Buffer((512, 500), "float32"), B_mat: T.Buffer((128, 128), "float32"), X: T.Buffer((500, 128), "float32"), Y: T.Buffer((512, 128), "float32")):
+        T.func_attr({"tir.noalias": True})
+        # with T.block("root"):
+        for dd, ee, ra, rb in T.grid(512, 128, 500, 128):
+            with T.block("Y"):
+                v_dd, v_ee, v_ra, v_rb = T.axis.remap("SSRR", [dd, ee, ra, rb])
+                T.reads(A_mat[v_dd, v_ra], X[v_ra, v_rb], B_mat[v_rb, v_ee])
+                T.writes(Y[v_dd, v_ee])
+                with T.init():
+                    Y[v_dd, v_ee] = T.float32(0.0)
+                Y[v_dd, v_ee] = Y[v_dd, v_ee] + A_mat[v_dd, v_ra] * X[v_ra, v_rb] * B_mat[v_rb, v_ee]
+2025-07-03 10:37:27 [INFO] [multi_level_tiling_with_intrin.cc:52] The workload cannot be tensorized.
+2025-07-03 10:37:27 [INFO] [multi_level_tiling_with_intrin.cc:52] The workload cannot be tensorized.
+2025-07-03 10:37:27 [INFO] [task_scheduler.cc:170] Total 3 design space(s) generated
+2025-07-03 10:37:27 [INFO] [task_scheduler.cc:176] Design space #0:
+# from tvm.script import ir as I
+# from tvm.script import tir as T
+
+@I.ir_module
+class Module:
+    @T.prim_func
+    def main(A_mat: T.Buffer((512, 500), "float32"), B_mat: T.Buffer((128, 128), "float32"), X: T.Buffer((500, 128), "float32"), Y: T.Buffer((512, 128), "float32")):
+        T.func_attr({"tir.noalias": True})
+        with T.block("root"):
+            T.reads()
+            T.writes()
+            T.block_attr({"meta_schedule.parallel": 64, "meta_schedule.unroll_explicit": 512, "meta_schedule.vectorize": 64})
+            Y_global = T.alloc_buffer((512, 128))
+            for dd_0, ee_0, dd_1, ee_1 in T.grid(2, 2, 16, 32):
+                for ra_0, rb_0, dd_2, ee_2, ra_1, rb_1, dd_3, ee_3 in T.grid(10, 32, 2, 1, 50, 4, 8, 2):
+                    with T.block("Y"):
+                        v_dd = T.axis.spatial(512, dd_0 * 256 + dd_1 * 16 + dd_2 * 8 + dd_3)
+                        v_ee = T.axis.spatial(128, ee_0 * 64 + ee_1 * 2 + ee_2 * 2 + ee_3)
+                        v_ra = T.axis.reduce(500, ra_0 * 50 + ra_1)
+                        v_rb = T.axis.reduce(128, rb_0 * 4 + rb_1)
+                        T.reads(A_mat[v_dd, v_ra], X[v_ra, v_rb], B_mat[v_rb, v_ee])
+                        T.writes(Y_global[v_dd, v_ee])
+                        T.block_attr({"meta_schedule.tiling_structure": "SSRSRS"})
+                        with T.init():
+                            Y_global[v_dd, v_ee] = T.float32(0.0)
+                        Y_global[v_dd, v_ee] = Y_global[v_dd, v_ee] + A_mat[v_dd, v_ra] * X[v_ra, v_rb] * B_mat[v_rb, v_ee]
+                for ax0, ax1 in T.grid(16, 2):
+                    with T.block("Y_global"):
+                        v0 = T.axis.spatial(512, dd_0 * 256 + dd_1 * 16 + ax0)
+                        v1 = T.axis.spatial(128, ee_0 * 64 + ee_1 * 2 + ax1)
+                        T.reads(Y_global[v0, v1])
+                        T.writes(Y[v0, v1])
+                        Y[v0, v1] = Y_global[v0, v1]
+b0 = sch.get_block(name="Y", func_name="main")
+b1 = sch.get_block(name="root", func_name="main")
+sch.annotate(block_or_loop=b0, ann_key="meta_schedule.tiling_structure", ann_val="SSRSRS")
+l2, l3, l4, l5 = sch.get_loops(block=b0)
+v6, v7, v8, v9 = sch.sample_perfect_tile(loop=l2, n=4, max_innermost_factor=64, decision=[2, 16, 2, 8])
+l10, l11, l12, l13 = sch.split(loop=l2, factors=[v6, v7, v8, v9], preserve_unit_iters=True, disable_predication=False)
+v14, v15, v16, v17 = sch.sample_perfect_tile(loop=l3, n=4, max_innermost_factor=64, decision=[2, 32, 1, 2])
+l18, l19, l20, l21 = sch.split(loop=l3, factors=[v14, v15, v16, v17], preserve_unit_iters=True, disable_predication=False)
+v22, v23 = sch.sample_perfect_tile(loop=l4, n=2, max_innermost_factor=64, decision=[10, 50])
+l24, l25 = sch.split(loop=l4, factors=[v22, v23], preserve_unit_iters=True, disable_predication=False)
+v26, v27 = sch.sample_perfect_tile(loop=l5, n=2, max_innermost_factor=64, decision=[32, 4])
+l28, l29 = sch.split(loop=l5, factors=[v26, v27], preserve_unit_iters=True, disable_predication=False)
+sch.reorder(l10, l18, l11, l19, l24, l28, l12, l20, l25, l29, l13, l21)
+b30 = sch.cache_write(block=b0, write_buffer_index=0, storage_scope="global")
+sch.reverse_compute_at(block=b30, loop=l19, preserve_unit_loops=True, index=-1)
+sch.annotate(block_or_loop=b1, ann_key="meta_schedule.parallel", ann_val=64)
+sch.annotate(block_or_loop=b1, ann_key="meta_schedule.vectorize", ann_val=64)
+v31 = sch.sample_categorical(candidates=[0, 16, 64, 512], probs=[0.25, 0.25, 0.25, 0.25], decision=3)
+sch.annotate(block_or_loop=b1, ann_key="meta_schedule.unroll_explicit", ann_val=v31)
+2025-07-03 10:37:27 [INFO] [task_scheduler.cc:176] Design space #1:
+# from tvm.script import ir as I
+# from tvm.script import tir as T
+
+@I.ir_module
+class Module:
+    @T.prim_func
+    def main(A_mat: T.Buffer((512, 500), "float32"), B_mat: T.Buffer((128, 128), "float32"), X: T.Buffer((500, 128), "float32"), Y: T.Buffer((512, 128), "float32")):
+        T.func_attr({"tir.noalias": True})
+        with T.block("root"):
+            T.reads()
+            T.writes()
+            T.block_attr({"meta_schedule.parallel": 64, "meta_schedule.unroll_explicit": 64, "meta_schedule.vectorize": 64})
+            Y_global = T.alloc_buffer((512, 128))
+            for dd_0, ee_0 in T.grid(2, 2):
+                for dd_1, ee_1, ra_0, rb_0, dd_2, ee_2, ra_1, rb_1, dd_3, ee_3 in T.grid(16, 32, 10, 32, 2, 1, 50, 4, 8, 2):
+                    with T.block("Y"):
+                        v_dd = T.axis.spatial(512, dd_0 * 256 + dd_1 * 16 + dd_2 * 8 + dd_3)
+                        v_ee = T.axis.spatial(128, ee_0 * 64 + ee_1 * 2 + ee_2 * 2 + ee_3)
+                        v_ra = T.axis.reduce(500, ra_0 * 50 + ra_1)
+                        v_rb = T.axis.reduce(128, rb_0 * 4 + rb_1)
+                        T.reads(A_mat[v_dd, v_ra], X[v_ra, v_rb], B_mat[v_rb, v_ee])
+                        T.writes(Y_global[v_dd, v_ee])
+                        T.block_attr({"meta_schedule.tiling_structure": "SSRSRS"})
+                        with T.init():
+                            Y_global[v_dd, v_ee] = T.float32(0.0)
+                        Y_global[v_dd, v_ee] = Y_global[v_dd, v_ee] + A_mat[v_dd, v_ra] * X[v_ra, v_rb] * B_mat[v_rb, v_ee]
+                for ax0, ax1 in T.grid(256, 64):
+                    with T.block("Y_global"):
+                        v0 = T.axis.spatial(512, dd_0 * 256 + ax0)
+                        v1 = T.axis.spatial(128, ee_0 * 64 + ax1)
+                        T.reads(Y_global[v0, v1])
+                        T.writes(Y[v0, v1])
+                        Y[v0, v1] = Y_global[v0, v1]
+b0 = sch.get_block(name="Y", func_name="main")
+b1 = sch.get_block(name="root", func_name="main")
+sch.annotate(block_or_loop=b0, ann_key="meta_schedule.tiling_structure", ann_val="SSRSRS")
+l2, l3, l4, l5 = sch.get_loops(block=b0)
+v6, v7, v8, v9 = sch.sample_perfect_tile(loop=l2, n=4, max_innermost_factor=64, decision=[2, 16, 2, 8])
+l10, l11, l12, l13 = sch.split(loop=l2, factors=[v6, v7, v8, v9], preserve_unit_iters=True, disable_predication=False)
+v14, v15, v16, v17 = sch.sample_perfect_tile(loop=l3, n=4, max_innermost_factor=64, decision=[2, 32, 1, 2])
+l18, l19, l20, l21 = sch.split(loop=l3, factors=[v14, v15, v16, v17], preserve_unit_iters=True, disable_predication=False)
+v22, v23 = sch.sample_perfect_tile(loop=l4, n=2, max_innermost_factor=64, decision=[10, 50])
+l24, l25 = sch.split(loop=l4, factors=[v22, v23], preserve_unit_iters=True, disable_predication=False)
+v26, v27 = sch.sample_perfect_tile(loop=l5, n=2, max_innermost_factor=64, decision=[32, 4])
+l28, l29 = sch.split(loop=l5, factors=[v26, v27], preserve_unit_iters=True, disable_predication=False)
+sch.reorder(l10, l18, l11, l19, l24, l28, l12, l20, l25, l29, l13, l21)
+b30 = sch.cache_write(block=b0, write_buffer_index=0, storage_scope="global")
+sch.reverse_compute_at(block=b30, loop=l18, preserve_unit_loops=True, index=-1)
+sch.annotate(block_or_loop=b1, ann_key="meta_schedule.parallel", ann_val=64)
+sch.annotate(block_or_loop=b1, ann_key="meta_schedule.vectorize", ann_val=64)
+v31 = sch.sample_categorical(candidates=[0, 16, 64, 512], probs=[0.25, 0.25, 0.25, 0.25], decision=2)
+sch.annotate(block_or_loop=b1, ann_key="meta_schedule.unroll_explicit", ann_val=v31)
+2025-07-03 10:37:27 [INFO] [task_scheduler.cc:176] Design space #2:
+# from tvm.script import ir as I
+# from tvm.script import tir as T
+
+@I.ir_module
+class Module:
+    @T.prim_func
+    def main(A_mat: T.Buffer((512, 500), "float32"), B_mat: T.Buffer((128, 128), "float32"), X: T.Buffer((500, 128), "float32"), Y: T.Buffer((512, 128), "float32")):
+        T.func_attr({"tir.noalias": True})
+        with T.block("root"):
+            T.reads()
+            T.writes()
+            T.block_attr({"meta_schedule.parallel": 64, "meta_schedule.unroll_explicit": 16, "meta_schedule.vectorize": 64})
+            for dd_0, ee_0, dd_1, ee_1, ra_0, rb_0, dd_2, ee_2, ra_1, rb_1, dd_3, ee_3 in T.grid(2, 2, 16, 32, 10, 32, 2, 1, 50, 4, 8, 2):
+                with T.block("Y"):
+                    v_dd = T.axis.spatial(512, dd_0 * 256 + dd_1 * 16 + dd_2 * 8 + dd_3)
+                    v_ee = T.axis.spatial(128, ee_0 * 64 + ee_1 * 2 + ee_2 * 2 + ee_3)
+                    v_ra = T.axis.reduce(500, ra_0 * 50 + ra_1)
+                    v_rb = T.axis.reduce(128, rb_0 * 4 + rb_1)
+                    T.reads(A_mat[v_dd, v_ra], X[v_ra, v_rb], B_mat[v_rb, v_ee])
+                    T.writes(Y[v_dd, v_ee])
+                    T.block_attr({"meta_schedule.tiling_structure": "SSRSRS"})
+                    with T.init():
+                        Y[v_dd, v_ee] = T.float32(0.0)
+                    Y[v_dd, v_ee] = Y[v_dd, v_ee] + A_mat[v_dd, v_ra] * X[v_ra, v_rb] * B_mat[v_rb, v_ee]
+b0 = sch.get_block(name="Y", func_name="main")
+b1 = sch.get_block(name="root", func_name="main")
+sch.annotate(block_or_loop=b0, ann_key="meta_schedule.tiling_structure", ann_val="SSRSRS")
+l2, l3, l4, l5 = sch.get_loops(block=b0)
+v6, v7, v8, v9 = sch.sample_perfect_tile(loop=l2, n=4, max_innermost_factor=64, decision=[2, 16, 2, 8])
+l10, l11, l12, l13 = sch.split(loop=l2, factors=[v6, v7, v8, v9], preserve_unit_iters=True, disable_predication=False)
+v14, v15, v16, v17 = sch.sample_perfect_tile(loop=l3, n=4, max_innermost_factor=64, decision=[2, 32, 1, 2])
+l18, l19, l20, l21 = sch.split(loop=l3, factors=[v14, v15, v16, v17], preserve_unit_iters=True, disable_predication=False)
+v22, v23 = sch.sample_perfect_tile(loop=l4, n=2, max_innermost_factor=64, decision=[10, 50])
+l24, l25 = sch.split(loop=l4, factors=[v22, v23], preserve_unit_iters=True, disable_predication=False)
+v26, v27 = sch.sample_perfect_tile(loop=l5, n=2, max_innermost_factor=64, decision=[32, 4])
+l28, l29 = sch.split(loop=l5, factors=[v26, v27], preserve_unit_iters=True, disable_predication=False)
+sch.reorder(l10, l18, l11, l19, l24, l28, l12, l20, l25, l29, l13, l21)
+sch.annotate(block_or_loop=b1, ann_key="meta_schedule.parallel", ann_val=64)
+sch.annotate(block_or_loop=b1, ann_key="meta_schedule.vectorize", ann_val=64)
+v30 = sch.sample_categorical(candidates=[0, 16, 64, 512], probs=[0.25, 0.25, 0.25, 0.25], decision=1)
+sch.annotate(block_or_loop=b1, ann_key="meta_schedule.unroll_explicit", ann_val=v30)
+2025-07-03 10:37:38 [INFO] [task_scheduler.cc:137] [Task #0: main] Trial #1: GFLOPs: 96.6308. Time: 130216.4080 us. Best GFLOPs: 96.6308
+2025-07-03 10:39:42 [INFO] [task_scheduler.cc:166] Initializing Task #0: "main"
+2025-07-03 10:39:42 [INFO] [task_scheduler.cc:41] 
+# from tvm.script import ir as I
+# from tvm.script import tir as T
+
+@I.ir_module
+class Module:
+    @T.prim_func
+    def main(A_mat: T.Buffer((512, 500), "float32"), B_mat: T.Buffer((128, 128), "float32"), X: T.Buffer((500, 128), "float32"), Y: T.Buffer((512, 128), "float32")):
+        T.func_attr({"tir.noalias": True})
+        # with T.block("root"):
+        for dd, ee, ra, rb in T.grid(512, 128, 500, 128):
+            with T.block("Y"):
+                v_dd, v_ee, v_ra, v_rb = T.axis.remap("SSRR", [dd, ee, ra, rb])
+                T.reads(A_mat[v_dd, v_ra], X[v_ra, v_rb], B_mat[v_rb, v_ee])
+                T.writes(Y[v_dd, v_ee])
+                with T.init():
+                    Y[v_dd, v_ee] = T.float32(0.0)
+                Y[v_dd, v_ee] = Y[v_dd, v_ee] + A_mat[v_dd, v_ra] * X[v_ra, v_rb] * B_mat[v_rb, v_ee]
+2025-07-03 10:39:42 [INFO] [multi_level_tiling_with_intrin.cc:52] The workload cannot be tensorized.
+2025-07-03 10:39:42 [INFO] [multi_level_tiling_with_intrin.cc:52] The workload cannot be tensorized.
+2025-07-03 10:39:42 [INFO] [task_scheduler.cc:170] Total 3 design space(s) generated
+2025-07-03 10:39:42 [INFO] [task_scheduler.cc:176] Design space #0:
+# from tvm.script import ir as I
+# from tvm.script import tir as T
+
+@I.ir_module
+class Module:
+    @T.prim_func
+    def main(A_mat: T.Buffer((512, 500), "float32"), B_mat: T.Buffer((128, 128), "float32"), X: T.Buffer((500, 128), "float32"), Y: T.Buffer((512, 128), "float32")):
+        T.func_attr({"tir.noalias": True})
+        with T.block("root"):
+            T.reads()
+            T.writes()
+            T.block_attr({"meta_schedule.parallel": 64, "meta_schedule.unroll_explicit": 0, "meta_schedule.vectorize": 64})
+            Y_global = T.alloc_buffer((512, 128))
+            for dd_0, ee_0, dd_1, ee_1 in T.grid(2, 8, 1, 16):
+                for ra_0, rb_0, dd_2, ee_2, ra_1, rb_1, dd_3, ee_3 in T.grid(250, 64, 256, 1, 2, 2, 1, 1):
+                    with T.block("Y"):
+                        v_dd = T.axis.spatial(512, dd_0 * 256 + dd_1 * 256 + dd_2 + dd_3)
+                        v_ee = T.axis.spatial(128, ee_0 * 16 + ee_1 + ee_2 + ee_3)
+                        v_ra = T.axis.reduce(500, ra_0 * 2 + ra_1)
+                        v_rb = T.axis.reduce(128, rb_0 * 2 + rb_1)
+                        T.reads(A_mat[v_dd, v_ra], X[v_ra, v_rb], B_mat[v_rb, v_ee])
+                        T.writes(Y_global[v_dd, v_ee])
+                        T.block_attr({"meta_schedule.tiling_structure": "SSRSRS"})
+                        with T.init():
+                            Y_global[v_dd, v_ee] = T.float32(0.0)
+                        Y_global[v_dd, v_ee] = Y_global[v_dd, v_ee] + A_mat[v_dd, v_ra] * X[v_ra, v_rb] * B_mat[v_rb, v_ee]
+                for ax0, ax1 in T.grid(256, 1):
+                    with T.block("Y_global"):
+                        v0 = T.axis.spatial(512, dd_0 * 256 + ax0)
+                        v1 = T.axis.spatial(128, ee_0 * 16 + ee_1 + ax1)
+                        T.reads(Y_global[v0, v1])
+                        T.writes(Y[v0, v1])
+                        Y[v0, v1] = Y_global[v0, v1]
+b0 = sch.get_block(name="Y", func_name="main")
+b1 = sch.get_block(name="root", func_name="main")
+sch.annotate(block_or_loop=b0, ann_key="meta_schedule.tiling_structure", ann_val="SSRSRS")
+l2, l3, l4, l5 = sch.get_loops(block=b0)
+v6, v7, v8, v9 = sch.sample_perfect_tile(loop=l2, n=4, max_innermost_factor=64, decision=[2, 1, 256, 1])
+l10, l11, l12, l13 = sch.split(loop=l2, factors=[v6, v7, v8, v9], preserve_unit_iters=True, disable_predication=False)
+v14, v15, v16, v17 = sch.sample_perfect_tile(loop=l3, n=4, max_innermost_factor=64, decision=[8, 16, 1, 1])
+l18, l19, l20, l21 = sch.split(loop=l3, factors=[v14, v15, v16, v17], preserve_unit_iters=True, disable_predication=False)
+v22, v23 = sch.sample_perfect_tile(loop=l4, n=2, max_innermost_factor=64, decision=[250, 2])
+l24, l25 = sch.split(loop=l4, factors=[v22, v23], preserve_unit_iters=True, disable_predication=False)
+v26, v27 = sch.sample_perfect_tile(loop=l5, n=2, max_innermost_factor=64, decision=[64, 2])
+l28, l29 = sch.split(loop=l5, factors=[v26, v27], preserve_unit_iters=True, disable_predication=False)
+sch.reorder(l10, l18, l11, l19, l24, l28, l12, l20, l25, l29, l13, l21)
+b30 = sch.cache_write(block=b0, write_buffer_index=0, storage_scope="global")
+sch.reverse_compute_at(block=b30, loop=l19, preserve_unit_loops=True, index=-1)
+sch.annotate(block_or_loop=b1, ann_key="meta_schedule.parallel", ann_val=64)
+sch.annotate(block_or_loop=b1, ann_key="meta_schedule.vectorize", ann_val=64)
+v31 = sch.sample_categorical(candidates=[0, 16, 64, 512], probs=[0.25, 0.25, 0.25, 0.25], decision=0)
+sch.annotate(block_or_loop=b1, ann_key="meta_schedule.unroll_explicit", ann_val=v31)
+2025-07-03 10:39:42 [INFO] [task_scheduler.cc:176] Design space #1:
+# from tvm.script import ir as I
+# from tvm.script import tir as T
+
+@I.ir_module
+class Module:
+    @T.prim_func
+    def main(A_mat: T.Buffer((512, 500), "float32"), B_mat: T.Buffer((128, 128), "float32"), X: T.Buffer((500, 128), "float32"), Y: T.Buffer((512, 128), "float32")):
+        T.func_attr({"tir.noalias": True})
+        with T.block("root"):
+            T.reads()
+            T.writes()
+            T.block_attr({"meta_schedule.parallel": 64, "meta_schedule.unroll_explicit": 16, "meta_schedule.vectorize": 64})
+            Y_global = T.alloc_buffer((512, 128))
+            for dd_0, ee_0 in T.grid(2, 8):
+                for dd_1, ee_1, ra_0, rb_0, dd_2, ee_2, ra_1, rb_1, dd_3, ee_3 in T.grid(1, 16, 250, 64, 256, 1, 2, 2, 1, 1):
+                    with T.block("Y"):
+                        v_dd = T.axis.spatial(512, dd_0 * 256 + dd_1 * 256 + dd_2 + dd_3)
+                        v_ee = T.axis.spatial(128, ee_0 * 16 + ee_1 + ee_2 + ee_3)
+                        v_ra = T.axis.reduce(500, ra_0 * 2 + ra_1)
+                        v_rb = T.axis.reduce(128, rb_0 * 2 + rb_1)
+                        T.reads(A_mat[v_dd, v_ra], X[v_ra, v_rb], B_mat[v_rb, v_ee])
+                        T.writes(Y_global[v_dd, v_ee])
+                        T.block_attr({"meta_schedule.tiling_structure": "SSRSRS"})
+                        with T.init():
+                            Y_global[v_dd, v_ee] = T.float32(0.0)
+                        Y_global[v_dd, v_ee] = Y_global[v_dd, v_ee] + A_mat[v_dd, v_ra] * X[v_ra, v_rb] * B_mat[v_rb, v_ee]
+                for ax0, ax1 in T.grid(256, 16):
+                    with T.block("Y_global"):
+                        v0 = T.axis.spatial(512, dd_0 * 256 + ax0)
+                        v1 = T.axis.spatial(128, ee_0 * 16 + ax1)
+                        T.reads(Y_global[v0, v1])
+                        T.writes(Y[v0, v1])
+                        Y[v0, v1] = Y_global[v0, v1]
+b0 = sch.get_block(name="Y", func_name="main")
+b1 = sch.get_block(name="root", func_name="main")
+sch.annotate(block_or_loop=b0, ann_key="meta_schedule.tiling_structure", ann_val="SSRSRS")
+l2, l3, l4, l5 = sch.get_loops(block=b0)
+v6, v7, v8, v9 = sch.sample_perfect_tile(loop=l2, n=4, max_innermost_factor=64, decision=[2, 1, 256, 1])
+l10, l11, l12, l13 = sch.split(loop=l2, factors=[v6, v7, v8, v9], preserve_unit_iters=True, disable_predication=False)
+v14, v15, v16, v17 = sch.sample_perfect_tile(loop=l3, n=4, max_innermost_factor=64, decision=[8, 16, 1, 1])
+l18, l19, l20, l21 = sch.split(loop=l3, factors=[v14, v15, v16, v17], preserve_unit_iters=True, disable_predication=False)
+v22, v23 = sch.sample_perfect_tile(loop=l4, n=2, max_innermost_factor=64, decision=[250, 2])
+l24, l25 = sch.split(loop=l4, factors=[v22, v23], preserve_unit_iters=True, disable_predication=False)
+v26, v27 = sch.sample_perfect_tile(loop=l5, n=2, max_innermost_factor=64, decision=[64, 2])
+l28, l29 = sch.split(loop=l5, factors=[v26, v27], preserve_unit_iters=True, disable_predication=False)
+sch.reorder(l10, l18, l11, l19, l24, l28, l12, l20, l25, l29, l13, l21)
+b30 = sch.cache_write(block=b0, write_buffer_index=0, storage_scope="global")
+sch.reverse_compute_at(block=b30, loop=l18, preserve_unit_loops=True, index=-1)
+sch.annotate(block_or_loop=b1, ann_key="meta_schedule.parallel", ann_val=64)
+sch.annotate(block_or_loop=b1, ann_key="meta_schedule.vectorize", ann_val=64)
+v31 = sch.sample_categorical(candidates=[0, 16, 64, 512], probs=[0.25, 0.25, 0.25, 0.25], decision=1)
+sch.annotate(block_or_loop=b1, ann_key="meta_schedule.unroll_explicit", ann_val=v31)
+2025-07-03 10:39:42 [INFO] [task_scheduler.cc:176] Design space #2:
+# from tvm.script import ir as I
+# from tvm.script import tir as T
+
+@I.ir_module
+class Module:
+    @T.prim_func
+    def main(A_mat: T.Buffer((512, 500), "float32"), B_mat: T.Buffer((128, 128), "float32"), X: T.Buffer((500, 128), "float32"), Y: T.Buffer((512, 128), "float32")):
+        T.func_attr({"tir.noalias": True})
+        with T.block("root"):
+            T.reads()
+            T.writes()
+            T.block_attr({"meta_schedule.parallel": 64, "meta_schedule.unroll_explicit": 512, "meta_schedule.vectorize": 64})
+            for dd_0, ee_0, dd_1, ee_1, ra_0, rb_0, dd_2, ee_2, ra_1, rb_1, dd_3, ee_3 in T.grid(2, 8, 1, 16, 250, 64, 256, 1, 2, 2, 1, 1):
+                with T.block("Y"):
+                    v_dd = T.axis.spatial(512, dd_0 * 256 + dd_1 * 256 + dd_2 + dd_3)
+                    v_ee = T.axis.spatial(128, ee_0 * 16 + ee_1 + ee_2 + ee_3)
+                    v_ra = T.axis.reduce(500, ra_0 * 2 + ra_1)
+                    v_rb = T.axis.reduce(128, rb_0 * 2 + rb_1)
+                    T.reads(A_mat[v_dd, v_ra], X[v_ra, v_rb], B_mat[v_rb, v_ee])
+                    T.writes(Y[v_dd, v_ee])
+                    T.block_attr({"meta_schedule.tiling_structure": "SSRSRS"})
+                    with T.init():
+                        Y[v_dd, v_ee] = T.float32(0.0)
+                    Y[v_dd, v_ee] = Y[v_dd, v_ee] + A_mat[v_dd, v_ra] * X[v_ra, v_rb] * B_mat[v_rb, v_ee]
+b0 = sch.get_block(name="Y", func_name="main")
+b1 = sch.get_block(name="root", func_name="main")
+sch.annotate(block_or_loop=b0, ann_key="meta_schedule.tiling_structure", ann_val="SSRSRS")
+l2, l3, l4, l5 = sch.get_loops(block=b0)
+v6, v7, v8, v9 = sch.sample_perfect_tile(loop=l2, n=4, max_innermost_factor=64, decision=[2, 1, 256, 1])
+l10, l11, l12, l13 = sch.split(loop=l2, factors=[v6, v7, v8, v9], preserve_unit_iters=True, disable_predication=False)
+v14, v15, v16, v17 = sch.sample_perfect_tile(loop=l3, n=4, max_innermost_factor=64, decision=[8, 16, 1, 1])
+l18, l19, l20, l21 = sch.split(loop=l3, factors=[v14, v15, v16, v17], preserve_unit_iters=True, disable_predication=False)
+v22, v23 = sch.sample_perfect_tile(loop=l4, n=2, max_innermost_factor=64, decision=[250, 2])
+l24, l25 = sch.split(loop=l4, factors=[v22, v23], preserve_unit_iters=True, disable_predication=False)
+v26, v27 = sch.sample_perfect_tile(loop=l5, n=2, max_innermost_factor=64, decision=[64, 2])
+l28, l29 = sch.split(loop=l5, factors=[v26, v27], preserve_unit_iters=True, disable_predication=False)
+sch.reorder(l10, l18, l11, l19, l24, l28, l12, l20, l25, l29, l13, l21)
+sch.annotate(block_or_loop=b1, ann_key="meta_schedule.parallel", ann_val=64)
+sch.annotate(block_or_loop=b1, ann_key="meta_schedule.vectorize", ann_val=64)
+v30 = sch.sample_categorical(candidates=[0, 16, 64, 512], probs=[0.25, 0.25, 0.25, 0.25], decision=3)
+sch.annotate(block_or_loop=b1, ann_key="meta_schedule.unroll_explicit", ann_val=v30)
+2025-07-03 10:39:52 [INFO] [task_scheduler.cc:137] [Task #0: main] Trial #1: GFLOPs: 121.5287. Time: 103538.6221 us. Best GFLOPs: 121.5287
+2025-07-03 10:40:57 [INFO] [task_scheduler.cc:166] Initializing Task #0: "main"
+2025-07-03 10:40:57 [INFO] [task_scheduler.cc:41] 
+# from tvm.script import ir as I
+# from tvm.script import tir as T
+
+@I.ir_module
+class Module:
+    @T.prim_func
+    def main(A_mat: T.Buffer((512, 500), "float32"), B_mat: T.Buffer((128, 128), "float32"), X: T.Buffer((500, 128), "float32"), Y: T.Buffer((512, 128), "float32")):
+        T.func_attr({"tir.noalias": True})
+        # with T.block("root"):
+        for dd, ee, ra, rb in T.grid(512, 128, 500, 128):
+            with T.block("Y"):
+                v_dd, v_ee, v_ra, v_rb = T.axis.remap("SSRR", [dd, ee, ra, rb])
+                T.reads(A_mat[v_dd, v_ra], X[v_ra, v_rb], B_mat[v_rb, v_ee])
+                T.writes(Y[v_dd, v_ee])
+                with T.init():
+                    Y[v_dd, v_ee] = T.float32(0.0)
+                Y[v_dd, v_ee] = Y[v_dd, v_ee] + A_mat[v_dd, v_ra] * X[v_ra, v_rb] * B_mat[v_rb, v_ee]
+2025-07-03 10:40:57 [INFO] [multi_level_tiling_with_intrin.cc:52] The workload cannot be tensorized.
+2025-07-03 10:40:57 [INFO] [multi_level_tiling_with_intrin.cc:52] The workload cannot be tensorized.
+2025-07-03 10:40:57 [INFO] [task_scheduler.cc:170] Total 3 design space(s) generated
+2025-07-03 10:40:57 [INFO] [task_scheduler.cc:176] Design space #0:
+# from tvm.script import ir as I
+# from tvm.script import tir as T
+
+@I.ir_module
+class Module:
+    @T.prim_func
+    def main(A_mat: T.Buffer((512, 500), "float32"), B_mat: T.Buffer((128, 128), "float32"), X: T.Buffer((500, 128), "float32"), Y: T.Buffer((512, 128), "float32")):
+        T.func_attr({"tir.noalias": True})
+        with T.block("root"):
+            T.reads()
+            T.writes()
+            T.block_attr({"meta_schedule.parallel": 64, "meta_schedule.unroll_explicit": 512, "meta_schedule.vectorize": 64})
+            Y_global = T.alloc_buffer((512, 128))
+            for dd_0, ee_0, dd_1, ee_1 in T.grid(4, 2, 2, 2):
+                for ra_0, rb_0, dd_2, ee_2, ra_1, rb_1, dd_3, ee_3 in T.grid(50, 32, 1, 8, 10, 4, 64, 4):
+                    with T.block("Y"):
+                        v_dd = T.axis.spatial(512, dd_0 * 128 + dd_1 * 64 + dd_2 * 64 + dd_3)
+                        v_ee = T.axis.spatial(128, ee_0 * 64 + ee_1 * 32 + ee_2 * 4 + ee_3)
+                        v_ra = T.axis.reduce(500, ra_0 * 10 + ra_1)
+                        v_rb = T.axis.reduce(128, rb_0 * 4 + rb_1)
+                        T.reads(A_mat[v_dd, v_ra], X[v_ra, v_rb], B_mat[v_rb, v_ee])
+                        T.writes(Y_global[v_dd, v_ee])
+                        T.block_attr({"meta_schedule.tiling_structure": "SSRSRS"})
+                        with T.init():
+                            Y_global[v_dd, v_ee] = T.float32(0.0)
+                        Y_global[v_dd, v_ee] = Y_global[v_dd, v_ee] + A_mat[v_dd, v_ra] * X[v_ra, v_rb] * B_mat[v_rb, v_ee]
+                for ax0, ax1 in T.grid(64, 32):
+                    with T.block("Y_global"):
+                        v0 = T.axis.spatial(512, dd_0 * 128 + dd_1 * 64 + ax0)
+                        v1 = T.axis.spatial(128, ee_0 * 64 + ee_1 * 32 + ax1)
+                        T.reads(Y_global[v0, v1])
+                        T.writes(Y[v0, v1])
+                        Y[v0, v1] = Y_global[v0, v1]
+b0 = sch.get_block(name="Y", func_name="main")
+b1 = sch.get_block(name="root", func_name="main")
+sch.annotate(block_or_loop=b0, ann_key="meta_schedule.tiling_structure", ann_val="SSRSRS")
+l2, l3, l4, l5 = sch.get_loops(block=b0)
+v6, v7, v8, v9 = sch.sample_perfect_tile(loop=l2, n=4, max_innermost_factor=64, decision=[4, 2, 1, 64])
+l10, l11, l12, l13 = sch.split(loop=l2, factors=[v6, v7, v8, v9], preserve_unit_iters=True, disable_predication=False)
+v14, v15, v16, v17 = sch.sample_perfect_tile(loop=l3, n=4, max_innermost_factor=64, decision=[2, 2, 8, 4])
+l18, l19, l20, l21 = sch.split(loop=l3, factors=[v14, v15, v16, v17], preserve_unit_iters=True, disable_predication=False)
+v22, v23 = sch.sample_perfect_tile(loop=l4, n=2, max_innermost_factor=64, decision=[50, 10])
+l24, l25 = sch.split(loop=l4, factors=[v22, v23], preserve_unit_iters=True, disable_predication=False)
+v26, v27 = sch.sample_perfect_tile(loop=l5, n=2, max_innermost_factor=64, decision=[32, 4])
+l28, l29 = sch.split(loop=l5, factors=[v26, v27], preserve_unit_iters=True, disable_predication=False)
+sch.reorder(l10, l18, l11, l19, l24, l28, l12, l20, l25, l29, l13, l21)
+b30 = sch.cache_write(block=b0, write_buffer_index=0, storage_scope="global")
+sch.reverse_compute_at(block=b30, loop=l19, preserve_unit_loops=True, index=-1)
+sch.annotate(block_or_loop=b1, ann_key="meta_schedule.parallel", ann_val=64)
+sch.annotate(block_or_loop=b1, ann_key="meta_schedule.vectorize", ann_val=64)
+v31 = sch.sample_categorical(candidates=[0, 16, 64, 512], probs=[0.25, 0.25, 0.25, 0.25], decision=3)
+sch.annotate(block_or_loop=b1, ann_key="meta_schedule.unroll_explicit", ann_val=v31)
+2025-07-03 10:40:57 [INFO] [task_scheduler.cc:176] Design space #1:
+# from tvm.script import ir as I
+# from tvm.script import tir as T
+
+@I.ir_module
+class Module:
+    @T.prim_func
+    def main(A_mat: T.Buffer((512, 500), "float32"), B_mat: T.Buffer((128, 128), "float32"), X: T.Buffer((500, 128), "float32"), Y: T.Buffer((512, 128), "float32")):
+        T.func_attr({"tir.noalias": True})
+        with T.block("root"):
+            T.reads()
+            T.writes()
+            T.block_attr({"meta_schedule.parallel": 64, "meta_schedule.unroll_explicit": 0, "meta_schedule.vectorize": 64})
+            Y_global = T.alloc_buffer((512, 128))
+            for dd_0, ee_0 in T.grid(4, 2):
+                for dd_1, ee_1, ra_0, rb_0, dd_2, ee_2, ra_1, rb_1, dd_3, ee_3 in T.grid(2, 2, 50, 32, 1, 8, 10, 4, 64, 4):
+                    with T.block("Y"):
+                        v_dd = T.axis.spatial(512, dd_0 * 128 + dd_1 * 64 + dd_2 * 64 + dd_3)
+                        v_ee = T.axis.spatial(128, ee_0 * 64 + ee_1 * 32 + ee_2 * 4 + ee_3)
+                        v_ra = T.axis.reduce(500, ra_0 * 10 + ra_1)
+                        v_rb = T.axis.reduce(128, rb_0 * 4 + rb_1)
+                        T.reads(A_mat[v_dd, v_ra], X[v_ra, v_rb], B_mat[v_rb, v_ee])
+                        T.writes(Y_global[v_dd, v_ee])
+                        T.block_attr({"meta_schedule.tiling_structure": "SSRSRS"})
+                        with T.init():
+                            Y_global[v_dd, v_ee] = T.float32(0.0)
+                        Y_global[v_dd, v_ee] = Y_global[v_dd, v_ee] + A_mat[v_dd, v_ra] * X[v_ra, v_rb] * B_mat[v_rb, v_ee]
+                for ax0, ax1 in T.grid(128, 64):
+                    with T.block("Y_global"):
+                        v0 = T.axis.spatial(512, dd_0 * 128 + ax0)
+                        v1 = T.axis.spatial(128, ee_0 * 64 + ax1)
+                        T.reads(Y_global[v0, v1])
+                        T.writes(Y[v0, v1])
+                        Y[v0, v1] = Y_global[v0, v1]
+b0 = sch.get_block(name="Y", func_name="main")
+b1 = sch.get_block(name="root", func_name="main")
+sch.annotate(block_or_loop=b0, ann_key="meta_schedule.tiling_structure", ann_val="SSRSRS")
+l2, l3, l4, l5 = sch.get_loops(block=b0)
+v6, v7, v8, v9 = sch.sample_perfect_tile(loop=l2, n=4, max_innermost_factor=64, decision=[4, 2, 1, 64])
+l10, l11, l12, l13 = sch.split(loop=l2, factors=[v6, v7, v8, v9], preserve_unit_iters=True, disable_predication=False)
+v14, v15, v16, v17 = sch.sample_perfect_tile(loop=l3, n=4, max_innermost_factor=64, decision=[2, 2, 8, 4])
+l18, l19, l20, l21 = sch.split(loop=l3, factors=[v14, v15, v16, v17], preserve_unit_iters=True, disable_predication=False)
+v22, v23 = sch.sample_perfect_tile(loop=l4, n=2, max_innermost_factor=64, decision=[50, 10])
+l24, l25 = sch.split(loop=l4, factors=[v22, v23], preserve_unit_iters=True, disable_predication=False)
+v26, v27 = sch.sample_perfect_tile(loop=l5, n=2, max_innermost_factor=64, decision=[32, 4])
+l28, l29 = sch.split(loop=l5, factors=[v26, v27], preserve_unit_iters=True, disable_predication=False)
+sch.reorder(l10, l18, l11, l19, l24, l28, l12, l20, l25, l29, l13, l21)
+b30 = sch.cache_write(block=b0, write_buffer_index=0, storage_scope="global")
+sch.reverse_compute_at(block=b30, loop=l18, preserve_unit_loops=True, index=-1)
+sch.annotate(block_or_loop=b1, ann_key="meta_schedule.parallel", ann_val=64)
+sch.annotate(block_or_loop=b1, ann_key="meta_schedule.vectorize", ann_val=64)
+v31 = sch.sample_categorical(candidates=[0, 16, 64, 512], probs=[0.25, 0.25, 0.25, 0.25], decision=0)
+sch.annotate(block_or_loop=b1, ann_key="meta_schedule.unroll_explicit", ann_val=v31)
+2025-07-03 10:40:57 [INFO] [task_scheduler.cc:176] Design space #2:
+# from tvm.script import ir as I
+# from tvm.script import tir as T
+
+@I.ir_module
+class Module:
+    @T.prim_func
+    def main(A_mat: T.Buffer((512, 500), "float32"), B_mat: T.Buffer((128, 128), "float32"), X: T.Buffer((500, 128), "float32"), Y: T.Buffer((512, 128), "float32")):
+        T.func_attr({"tir.noalias": True})
+        with T.block("root"):
+            T.reads()
+            T.writes()
+            T.block_attr({"meta_schedule.parallel": 64, "meta_schedule.unroll_explicit": 512, "meta_schedule.vectorize": 64})
+            for dd_0, ee_0, dd_1, ee_1, ra_0, rb_0, dd_2, ee_2, ra_1, rb_1, dd_3, ee_3 in T.grid(4, 2, 2, 2, 50, 32, 1, 8, 10, 4, 64, 4):
+                with T.block("Y"):
+                    v_dd = T.axis.spatial(512, dd_0 * 128 + dd_1 * 64 + dd_2 * 64 + dd_3)
+                    v_ee = T.axis.spatial(128, ee_0 * 64 + ee_1 * 32 + ee_2 * 4 + ee_3)
+                    v_ra = T.axis.reduce(500, ra_0 * 10 + ra_1)
+                    v_rb = T.axis.reduce(128, rb_0 * 4 + rb_1)
+                    T.reads(A_mat[v_dd, v_ra], X[v_ra, v_rb], B_mat[v_rb, v_ee])
+                    T.writes(Y[v_dd, v_ee])
+                    T.block_attr({"meta_schedule.tiling_structure": "SSRSRS"})
+                    with T.init():
+                        Y[v_dd, v_ee] = T.float32(0.0)
+                    Y[v_dd, v_ee] = Y[v_dd, v_ee] + A_mat[v_dd, v_ra] * X[v_ra, v_rb] * B_mat[v_rb, v_ee]
+b0 = sch.get_block(name="Y", func_name="main")
+b1 = sch.get_block(name="root", func_name="main")
+sch.annotate(block_or_loop=b0, ann_key="meta_schedule.tiling_structure", ann_val="SSRSRS")
+l2, l3, l4, l5 = sch.get_loops(block=b0)
+v6, v7, v8, v9 = sch.sample_perfect_tile(loop=l2, n=4, max_innermost_factor=64, decision=[4, 2, 1, 64])
+l10, l11, l12, l13 = sch.split(loop=l2, factors=[v6, v7, v8, v9], preserve_unit_iters=True, disable_predication=False)
+v14, v15, v16, v17 = sch.sample_perfect_tile(loop=l3, n=4, max_innermost_factor=64, decision=[2, 2, 8, 4])
+l18, l19, l20, l21 = sch.split(loop=l3, factors=[v14, v15, v16, v17], preserve_unit_iters=True, disable_predication=False)
+v22, v23 = sch.sample_perfect_tile(loop=l4, n=2, max_innermost_factor=64, decision=[50, 10])
+l24, l25 = sch.split(loop=l4, factors=[v22, v23], preserve_unit_iters=True, disable_predication=False)
+v26, v27 = sch.sample_perfect_tile(loop=l5, n=2, max_innermost_factor=64, decision=[32, 4])
+l28, l29 = sch.split(loop=l5, factors=[v26, v27], preserve_unit_iters=True, disable_predication=False)
+sch.reorder(l10, l18, l11, l19, l24, l28, l12, l20, l25, l29, l13, l21)
+sch.annotate(block_or_loop=b1, ann_key="meta_schedule.parallel", ann_val=64)
+sch.annotate(block_or_loop=b1, ann_key="meta_schedule.vectorize", ann_val=64)
+v30 = sch.sample_categorical(candidates=[0, 16, 64, 512], probs=[0.25, 0.25, 0.25, 0.25], decision=3)
+sch.annotate(block_or_loop=b1, ann_key="meta_schedule.unroll_explicit", ann_val=v30)
+2025-07-03 10:41:02 [INFO] [task_scheduler.cc:137] [Task #0: main] Trial #1: GFLOPs: 447.3467. Time: 28127.8743 us. Best GFLOPs: 447.3467
+2025-07-03 10:45:54 [INFO] [task_scheduler.cc:166] Initializing Task #0: "main"
+2025-07-03 10:45:54 [INFO] [task_scheduler.cc:41] 
+# from tvm.script import ir as I
+# from tvm.script import tir as T
+
+@I.ir_module
+class Module:
+    @T.prim_func
+    def main(A_mat: T.Buffer((512, 500), "float32"), B_mat: T.Buffer((128, 128), "float32"), X: T.Buffer((500, 128), "float32"), Y: T.Buffer((512, 128), "float32")):
+        T.func_attr({"tir.noalias": True})
+        # with T.block("root"):
+        for dd, ee, ra, rb in T.grid(512, 128, 500, 128):
+            with T.block("Y"):
+                v_dd, v_ee, v_ra, v_rb = T.axis.remap("SSRR", [dd, ee, ra, rb])
+                T.reads(A_mat[v_dd, v_ra], X[v_ra, v_rb], B_mat[v_rb, v_ee])
+                T.writes(Y[v_dd, v_ee])
+                with T.init():
+                    Y[v_dd, v_ee] = T.float32(0.0)
+                Y[v_dd, v_ee] = Y[v_dd, v_ee] + A_mat[v_dd, v_ra] * X[v_ra, v_rb] * B_mat[v_rb, v_ee]
+2025-07-03 10:45:54 [INFO] [multi_level_tiling_with_intrin.cc:52] The workload cannot be tensorized.
+2025-07-03 10:45:54 [INFO] [multi_level_tiling_with_intrin.cc:52] The workload cannot be tensorized.
+2025-07-03 10:45:54 [INFO] [task_scheduler.cc:170] Total 3 design space(s) generated
+2025-07-03 10:45:54 [INFO] [task_scheduler.cc:176] Design space #0:
+# from tvm.script import ir as I
+# from tvm.script import tir as T
+
+@I.ir_module
+class Module:
+    @T.prim_func
+    def main(A_mat: T.Buffer((512, 500), "float32"), B_mat: T.Buffer((128, 128), "float32"), X: T.Buffer((500, 128), "float32"), Y: T.Buffer((512, 128), "float32")):
+        T.func_attr({"tir.noalias": True})
+        with T.block("root"):
+            T.reads()
+            T.writes()
+            T.block_attr({"meta_schedule.parallel": 64, "meta_schedule.unroll_explicit": 16, "meta_schedule.vectorize": 64})
+            Y_global = T.alloc_buffer((512, 128))
+            for dd_0, ee_0, dd_1, ee_1 in T.grid(2, 2, 2, 2):
+                for ra_0, rb_0, dd_2, ee_2, ra_1, rb_1, dd_3, ee_3 in T.grid(250, 64, 2, 2, 2, 2, 64, 16):
+                    with T.block("Y"):
+                        v_dd = T.axis.spatial(512, dd_0 * 256 + dd_1 * 128 + dd_2 * 64 + dd_3)
+                        v_ee = T.axis.spatial(128, ee_0 * 64 + ee_1 * 32 + ee_2 * 16 + ee_3)
+                        v_ra = T.axis.reduce(500, ra_0 * 2 + ra_1)
+                        v_rb = T.axis.reduce(128, rb_0 * 2 + rb_1)
+                        T.reads(A_mat[v_dd, v_ra], X[v_ra, v_rb], B_mat[v_rb, v_ee])
+                        T.writes(Y_global[v_dd, v_ee])
+                        T.block_attr({"meta_schedule.tiling_structure": "SSRSRS"})
+                        with T.init():
+                            Y_global[v_dd, v_ee] = T.float32(0.0)
+                        Y_global[v_dd, v_ee] = Y_global[v_dd, v_ee] + A_mat[v_dd, v_ra] * X[v_ra, v_rb] * B_mat[v_rb, v_ee]
+                for ax0, ax1 in T.grid(128, 32):
+                    with T.block("Y_global"):
+                        v0 = T.axis.spatial(512, dd_0 * 256 + dd_1 * 128 + ax0)
+                        v1 = T.axis.spatial(128, ee_0 * 64 + ee_1 * 32 + ax1)
+                        T.reads(Y_global[v0, v1])
+                        T.writes(Y[v0, v1])
+                        Y[v0, v1] = Y_global[v0, v1]
+b0 = sch.get_block(name="Y", func_name="main")
+b1 = sch.get_block(name="root", func_name="main")
+sch.annotate(block_or_loop=b0, ann_key="meta_schedule.tiling_structure", ann_val="SSRSRS")
+l2, l3, l4, l5 = sch.get_loops(block=b0)
+v6, v7, v8, v9 = sch.sample_perfect_tile(loop=l2, n=4, max_innermost_factor=64, decision=[2, 2, 2, 64])
+l10, l11, l12, l13 = sch.split(loop=l2, factors=[v6, v7, v8, v9], preserve_unit_iters=True, disable_predication=False)
+v14, v15, v16, v17 = sch.sample_perfect_tile(loop=l3, n=4, max_innermost_factor=64, decision=[2, 2, 2, 16])
+l18, l19, l20, l21 = sch.split(loop=l3, factors=[v14, v15, v16, v17], preserve_unit_iters=True, disable_predication=False)
+v22, v23 = sch.sample_perfect_tile(loop=l4, n=2, max_innermost_factor=64, decision=[250, 2])
+l24, l25 = sch.split(loop=l4, factors=[v22, v23], preserve_unit_iters=True, disable_predication=False)
+v26, v27 = sch.sample_perfect_tile(loop=l5, n=2, max_innermost_factor=64, decision=[64, 2])
+l28, l29 = sch.split(loop=l5, factors=[v26, v27], preserve_unit_iters=True, disable_predication=False)
+sch.reorder(l10, l18, l11, l19, l24, l28, l12, l20, l25, l29, l13, l21)
+b30 = sch.cache_write(block=b0, write_buffer_index=0, storage_scope="global")
+sch.reverse_compute_at(block=b30, loop=l19, preserve_unit_loops=True, index=-1)
+sch.annotate(block_or_loop=b1, ann_key="meta_schedule.parallel", ann_val=64)
+sch.annotate(block_or_loop=b1, ann_key="meta_schedule.vectorize", ann_val=64)
+v31 = sch.sample_categorical(candidates=[0, 16, 64, 512], probs=[0.25, 0.25, 0.25, 0.25], decision=1)
+sch.annotate(block_or_loop=b1, ann_key="meta_schedule.unroll_explicit", ann_val=v31)
+2025-07-03 10:45:54 [INFO] [task_scheduler.cc:176] Design space #1:
+# from tvm.script import ir as I
+# from tvm.script import tir as T
+
+@I.ir_module
+class Module:
+    @T.prim_func
+    def main(A_mat: T.Buffer((512, 500), "float32"), B_mat: T.Buffer((128, 128), "float32"), X: T.Buffer((500, 128), "float32"), Y: T.Buffer((512, 128), "float32")):
+        T.func_attr({"tir.noalias": True})
+        with T.block("root"):
+            T.reads()
+            T.writes()
+            T.block_attr({"meta_schedule.parallel": 64, "meta_schedule.unroll_explicit": 64, "meta_schedule.vectorize": 64})
+            Y_global = T.alloc_buffer((512, 128))
+            for dd_0, ee_0 in T.grid(2, 2):
+                for dd_1, ee_1, ra_0, rb_0, dd_2, ee_2, ra_1, rb_1, dd_3, ee_3 in T.grid(2, 2, 250, 64, 2, 2, 2, 2, 64, 16):
+                    with T.block("Y"):
+                        v_dd = T.axis.spatial(512, dd_0 * 256 + dd_1 * 128 + dd_2 * 64 + dd_3)
+                        v_ee = T.axis.spatial(128, ee_0 * 64 + ee_1 * 32 + ee_2 * 16 + ee_3)
+                        v_ra = T.axis.reduce(500, ra_0 * 2 + ra_1)
+                        v_rb = T.axis.reduce(128, rb_0 * 2 + rb_1)
+                        T.reads(A_mat[v_dd, v_ra], X[v_ra, v_rb], B_mat[v_rb, v_ee])
+                        T.writes(Y_global[v_dd, v_ee])
+                        T.block_attr({"meta_schedule.tiling_structure": "SSRSRS"})
+                        with T.init():
+                            Y_global[v_dd, v_ee] = T.float32(0.0)
+                        Y_global[v_dd, v_ee] = Y_global[v_dd, v_ee] + A_mat[v_dd, v_ra] * X[v_ra, v_rb] * B_mat[v_rb, v_ee]
+                for ax0, ax1 in T.grid(256, 64):
+                    with T.block("Y_global"):
+                        v0 = T.axis.spatial(512, dd_0 * 256 + ax0)
+                        v1 = T.axis.spatial(128, ee_0 * 64 + ax1)
+                        T.reads(Y_global[v0, v1])
+                        T.writes(Y[v0, v1])
+                        Y[v0, v1] = Y_global[v0, v1]
+b0 = sch.get_block(name="Y", func_name="main")
+b1 = sch.get_block(name="root", func_name="main")
+sch.annotate(block_or_loop=b0, ann_key="meta_schedule.tiling_structure", ann_val="SSRSRS")
+l2, l3, l4, l5 = sch.get_loops(block=b0)
+v6, v7, v8, v9 = sch.sample_perfect_tile(loop=l2, n=4, max_innermost_factor=64, decision=[2, 2, 2, 64])
+l10, l11, l12, l13 = sch.split(loop=l2, factors=[v6, v7, v8, v9], preserve_unit_iters=True, disable_predication=False)
+v14, v15, v16, v17 = sch.sample_perfect_tile(loop=l3, n=4, max_innermost_factor=64, decision=[2, 2, 2, 16])
+l18, l19, l20, l21 = sch.split(loop=l3, factors=[v14, v15, v16, v17], preserve_unit_iters=True, disable_predication=False)
+v22, v23 = sch.sample_perfect_tile(loop=l4, n=2, max_innermost_factor=64, decision=[250, 2])
+l24, l25 = sch.split(loop=l4, factors=[v22, v23], preserve_unit_iters=True, disable_predication=False)
+v26, v27 = sch.sample_perfect_tile(loop=l5, n=2, max_innermost_factor=64, decision=[64, 2])
+l28, l29 = sch.split(loop=l5, factors=[v26, v27], preserve_unit_iters=True, disable_predication=False)
+sch.reorder(l10, l18, l11, l19, l24, l28, l12, l20, l25, l29, l13, l21)
+b30 = sch.cache_write(block=b0, write_buffer_index=0, storage_scope="global")
+sch.reverse_compute_at(block=b30, loop=l18, preserve_unit_loops=True, index=-1)
+sch.annotate(block_or_loop=b1, ann_key="meta_schedule.parallel", ann_val=64)
+sch.annotate(block_or_loop=b1, ann_key="meta_schedule.vectorize", ann_val=64)
+v31 = sch.sample_categorical(candidates=[0, 16, 64, 512], probs=[0.25, 0.25, 0.25, 0.25], decision=2)
+sch.annotate(block_or_loop=b1, ann_key="meta_schedule.unroll_explicit", ann_val=v31)
+2025-07-03 10:45:54 [INFO] [task_scheduler.cc:176] Design space #2:
+# from tvm.script import ir as I
+# from tvm.script import tir as T
+
+@I.ir_module
+class Module:
+    @T.prim_func
+    def main(A_mat: T.Buffer((512, 500), "float32"), B_mat: T.Buffer((128, 128), "float32"), X: T.Buffer((500, 128), "float32"), Y: T.Buffer((512, 128), "float32")):
+        T.func_attr({"tir.noalias": True})
+        with T.block("root"):
+            T.reads()
+            T.writes()
+            T.block_attr({"meta_schedule.parallel": 64, "meta_schedule.unroll_explicit": 0, "meta_schedule.vectorize": 64})
+            for dd_0, ee_0, dd_1, ee_1, ra_0, rb_0, dd_2, ee_2, ra_1, rb_1, dd_3, ee_3 in T.grid(2, 2, 2, 2, 250, 64, 2, 2, 2, 2, 64, 16):
+                with T.block("Y"):
+                    v_dd = T.axis.spatial(512, dd_0 * 256 + dd_1 * 128 + dd_2 * 64 + dd_3)
+                    v_ee = T.axis.spatial(128, ee_0 * 64 + ee_1 * 32 + ee_2 * 16 + ee_3)
+                    v_ra = T.axis.reduce(500, ra_0 * 2 + ra_1)
+                    v_rb = T.axis.reduce(128, rb_0 * 2 + rb_1)
+                    T.reads(A_mat[v_dd, v_ra], X[v_ra, v_rb], B_mat[v_rb, v_ee])
+                    T.writes(Y[v_dd, v_ee])
+                    T.block_attr({"meta_schedule.tiling_structure": "SSRSRS"})
+                    with T.init():
+                        Y[v_dd, v_ee] = T.float32(0.0)
+                    Y[v_dd, v_ee] = Y[v_dd, v_ee] + A_mat[v_dd, v_ra] * X[v_ra, v_rb] * B_mat[v_rb, v_ee]
+b0 = sch.get_block(name="Y", func_name="main")
+b1 = sch.get_block(name="root", func_name="main")
+sch.annotate(block_or_loop=b0, ann_key="meta_schedule.tiling_structure", ann_val="SSRSRS")
+l2, l3, l4, l5 = sch.get_loops(block=b0)
+v6, v7, v8, v9 = sch.sample_perfect_tile(loop=l2, n=4, max_innermost_factor=64, decision=[2, 2, 2, 64])
+l10, l11, l12, l13 = sch.split(loop=l2, factors=[v6, v7, v8, v9], preserve_unit_iters=True, disable_predication=False)
+v14, v15, v16, v17 = sch.sample_perfect_tile(loop=l3, n=4, max_innermost_factor=64, decision=[2, 2, 2, 16])
+l18, l19, l20, l21 = sch.split(loop=l3, factors=[v14, v15, v16, v17], preserve_unit_iters=True, disable_predication=False)
+v22, v23 = sch.sample_perfect_tile(loop=l4, n=2, max_innermost_factor=64, decision=[250, 2])
+l24, l25 = sch.split(loop=l4, factors=[v22, v23], preserve_unit_iters=True, disable_predication=False)
+v26, v27 = sch.sample_perfect_tile(loop=l5, n=2, max_innermost_factor=64, decision=[64, 2])
+l28, l29 = sch.split(loop=l5, factors=[v26, v27], preserve_unit_iters=True, disable_predication=False)
+sch.reorder(l10, l18, l11, l19, l24, l28, l12, l20, l25, l29, l13, l21)
+sch.annotate(block_or_loop=b1, ann_key="meta_schedule.parallel", ann_val=64)
+sch.annotate(block_or_loop=b1, ann_key="meta_schedule.vectorize", ann_val=64)
+v30 = sch.sample_categorical(candidates=[0, 16, 64, 512], probs=[0.25, 0.25, 0.25, 0.25], decision=0)
+sch.annotate(block_or_loop=b1, ann_key="meta_schedule.unroll_explicit", ann_val=v30)
+2025-07-03 10:46:04 [INFO] [task_scheduler.cc:137] [Task #0: main] Trial #1: GFLOPs: 117.4838. Time: 107103.3868 us. Best GFLOPs: 117.4838

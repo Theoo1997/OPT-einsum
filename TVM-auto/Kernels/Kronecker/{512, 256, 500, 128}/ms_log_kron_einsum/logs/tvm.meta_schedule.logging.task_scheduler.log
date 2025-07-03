@@ -1,0 +1,215 @@
+2025-07-02 19:31:20 [INFO] Logging directory: /data/theo/projects/Tiling/OPT-einsum/TVM-auto/Kernels/Kronecker/{512, 256, 500, 128}/ms_log_kron_einsum/logs
+2025-07-02 19:31:29 [INFO] [task_scheduler.cc:165] Initializing Task #0: "main"
+2025-07-02 19:31:29 [INFO] [task_scheduler.cc:326] 
+ ID | Name |        FLOP | Weight | Speed (GFLOPS) | Latency (us) | Weighted Latency (us) | Trials | Done 
+----------------------------------------------------------------------------------------------------------
+  0 | main | 12582912000 |      1 |            N/A |          N/A |                   N/A |      0 |      
+----------------------------------------------------------------------------------------------------------
+Total trials: 0
+Total latency (us): 0
+
+2025-07-02 19:31:29 [INFO] [task_scheduler.cc:186] TaskScheduler picks Task #0: "main"
+2025-07-02 19:31:29 [INFO] [task_scheduler.cc:199] Sending 64 sample(s) to builder
+2025-07-02 19:31:39 [INFO] [task_scheduler.cc:201] Sending 64 sample(s) to runner
+2025-07-02 19:39:30 [DEBUG] XGB iter   0: tr-p-rmse: 0.553510	tr-a-peak@32: 0.991037	tr-rmse: 0.284442	tr-rmse: 0.284442
+2025-07-02 19:39:30 [DEBUG] XGB iter  25: tr-p-rmse: 0.075757	tr-a-peak@32: 0.999720	tr-rmse: 0.250261	tr-rmse: 0.250261
+2025-07-02 19:39:30 [DEBUG] XGB iter  50: tr-p-rmse: 0.075750	tr-a-peak@32: 0.999720	tr-rmse: 0.250269	tr-rmse: 0.250269
+2025-07-02 19:39:31 [DEBUG] XGB iter  75: tr-p-rmse: 0.075750	tr-a-peak@32: 0.999720	tr-rmse: 0.250269	tr-rmse: 0.250269
+2025-07-02 19:39:31 [DEBUG] XGB stopped. Best iteration: [33] tr-p-rmse:0.07575	tr-a-peak@32:0.99972	tr-rmse:0.25027	tr-rmse:0.25027 
+2025-07-02 19:39:31 [INFO] [task_scheduler.cc:243] [Updated] Task #0: "main"
+2025-07-02 19:39:31 [INFO] [task_scheduler.cc:326] 
+ ID | Name |        FLOP | Weight | Speed (GFLOPS) | Latency (us) | Weighted Latency (us) | Trials | Done 
+----------------------------------------------------------------------------------------------------------
+  0 | main | 12582912000 |      1 |      1188.1995 |   10589.8984 |            10589.8984 |     64 |      
+----------------------------------------------------------------------------------------------------------
+Total trials: 64
+Total latency (us): 10589.9
+
+2025-07-02 19:39:31 [INFO] [task_scheduler.cc:186] TaskScheduler picks Task #0: "main"
+2025-07-02 19:39:31 [INFO] [task_scheduler.cc:199] Sending 64 sample(s) to builder
+2025-07-02 19:39:43 [INFO] [task_scheduler.cc:201] Sending 64 sample(s) to runner
+2025-07-03 10:34:14 [INFO] Logging directory: /data/theo/projects/Tiling/OPT-einsum/TVM-auto/Kernels/Kronecker/{512, 256, 500, 128}/ms_log_kron_einsum/logs
+2025-07-03 10:34:23 [INFO] [task_scheduler.cc:165] Initializing Task #0: "main"
+2025-07-03 10:34:23 [INFO] [task_scheduler.cc:326] 
+ ID | Name |        FLOP | Weight | Speed (GFLOPS) | Latency (us) | Weighted Latency (us) | Trials | Done 
+----------------------------------------------------------------------------------------------------------
+  0 | main | 12582912000 |      1 |            N/A |          N/A |                   N/A |      0 |      
+----------------------------------------------------------------------------------------------------------
+Total trials: 0
+Total latency (us): 0
+
+2025-07-03 10:34:23 [INFO] [task_scheduler.cc:186] TaskScheduler picks Task #0: "main"
+2025-07-03 10:34:23 [INFO] [task_scheduler.cc:199] Sending 1 sample(s) to builder
+2025-07-03 10:34:25 [INFO] [task_scheduler.cc:201] Sending 1 sample(s) to runner
+2025-07-03 10:34:37 [DEBUG] XGB iter   0: tr-p-rmse: 0.000000	tr-a-peak@32: 1.000000	tr-rmse: 0.500000	tr-rmse: 0.500000
+2025-07-03 10:34:37 [DEBUG] XGB iter  25: tr-p-rmse: 0.000000	tr-a-peak@32: 1.000000	tr-rmse: 0.500000	tr-rmse: 0.500000
+2025-07-03 10:34:37 [DEBUG] XGB iter  50: tr-p-rmse: 0.000000	tr-a-peak@32: 1.000000	tr-rmse: 0.500000	tr-rmse: 0.500000
+2025-07-03 10:34:37 [DEBUG] XGB stopped. Best iteration: [0] tr-p-rmse:0.00000	tr-a-peak@32:1.00000	tr-rmse:0.50000	tr-rmse:0.50000 
+2025-07-03 10:34:37 [INFO] [task_scheduler.cc:243] [Updated] Task #0: "main"
+2025-07-03 10:34:37 [INFO] [task_scheduler.cc:326] 
+ ID | Name |        FLOP | Weight | Speed (GFLOPS) | Latency (us) | Weighted Latency (us) | Trials | Done 
+----------------------------------------------------------------------------------------------------------
+  0 | main | 12582912000 |      1 |        70.5416 |  178375.7918 |           178375.7918 |      1 |      
+----------------------------------------------------------------------------------------------------------
+Total trials: 1
+Total latency (us): 178376
+
+2025-07-03 10:34:37 [INFO] [task_scheduler.cc:266] Task #0 has finished. Remaining task(s): 0
+2025-07-03 10:34:37 [INFO] [task_scheduler.cc:326] 
+ ID | Name |        FLOP | Weight | Speed (GFLOPS) | Latency (us) | Weighted Latency (us) | Trials | Done 
+----------------------------------------------------------------------------------------------------------
+  0 | main | 12582912000 |      1 |        70.5416 |  178375.7918 |           178375.7918 |      1 |    Y 
+----------------------------------------------------------------------------------------------------------
+Total trials: 1
+Total latency (us): 178376
+
+2025-07-03 10:34:37 [INFO] LocalBuilder: max_workers = 1
+2025-07-03 10:34:41 [INFO] LocalRunner: max_workers = 1
+2025-07-03 10:37:18 [INFO] Logging directory: /data/theo/projects/Tiling/OPT-einsum/TVM-auto/Kernels/Kronecker/{512, 256, 500, 128}/ms_log_kron_einsum/logs
+2025-07-03 10:37:27 [INFO] [task_scheduler.cc:165] Initializing Task #0: "main"
+2025-07-03 10:37:27 [INFO] [task_scheduler.cc:326] 
+ ID | Name |        FLOP | Weight | Speed (GFLOPS) | Latency (us) | Weighted Latency (us) | Trials | Done 
+----------------------------------------------------------------------------------------------------------
+  0 | main | 12582912000 |      1 |            N/A |          N/A |                   N/A |      0 |      
+----------------------------------------------------------------------------------------------------------
+Total trials: 0
+Total latency (us): 0
+
+2025-07-03 10:37:27 [INFO] [task_scheduler.cc:186] TaskScheduler picks Task #0: "main"
+2025-07-03 10:37:27 [INFO] [task_scheduler.cc:199] Sending 1 sample(s) to builder
+2025-07-03 10:37:29 [INFO] [task_scheduler.cc:201] Sending 1 sample(s) to runner
+2025-07-03 10:37:38 [DEBUG] XGB iter   0: tr-p-rmse: 0.000000	tr-a-peak@32: 1.000000	tr-rmse: 0.500000	tr-rmse: 0.500000
+2025-07-03 10:37:38 [DEBUG] XGB iter  25: tr-p-rmse: 0.000000	tr-a-peak@32: 1.000000	tr-rmse: 0.500000	tr-rmse: 0.500000
+2025-07-03 10:37:38 [DEBUG] XGB iter  50: tr-p-rmse: 0.000000	tr-a-peak@32: 1.000000	tr-rmse: 0.500000	tr-rmse: 0.500000
+2025-07-03 10:37:38 [DEBUG] XGB stopped. Best iteration: [0] tr-p-rmse:0.00000	tr-a-peak@32:1.00000	tr-rmse:0.50000	tr-rmse:0.50000 
+2025-07-03 10:37:38 [INFO] [task_scheduler.cc:243] [Updated] Task #0: "main"
+2025-07-03 10:37:38 [INFO] [task_scheduler.cc:326] 
+ ID | Name |        FLOP | Weight | Speed (GFLOPS) | Latency (us) | Weighted Latency (us) | Trials | Done 
+----------------------------------------------------------------------------------------------------------
+  0 | main | 12582912000 |      1 |        96.6308 |  130216.4080 |           130216.4080 |      1 |      
+----------------------------------------------------------------------------------------------------------
+Total trials: 1
+Total latency (us): 130216
+
+2025-07-03 10:37:38 [INFO] [task_scheduler.cc:266] Task #0 has finished. Remaining task(s): 0
+2025-07-03 10:37:38 [INFO] [task_scheduler.cc:326] 
+ ID | Name |        FLOP | Weight | Speed (GFLOPS) | Latency (us) | Weighted Latency (us) | Trials | Done 
+----------------------------------------------------------------------------------------------------------
+  0 | main | 12582912000 |      1 |        96.6308 |  130216.4080 |           130216.4080 |      1 |    Y 
+----------------------------------------------------------------------------------------------------------
+Total trials: 1
+Total latency (us): 130216
+
+2025-07-03 10:37:39 [INFO] LocalBuilder: max_workers = 1
+2025-07-03 10:37:43 [INFO] LocalRunner: max_workers = 1
+2025-07-03 10:39:33 [INFO] Logging directory: /data/theo/projects/Tiling/OPT-einsum/TVM-auto/Kernels/Kronecker/{512, 256, 500, 128}/ms_log_kron_einsum/logs
+2025-07-03 10:39:42 [INFO] [task_scheduler.cc:165] Initializing Task #0: "main"
+2025-07-03 10:39:42 [INFO] [task_scheduler.cc:326] 
+ ID | Name |        FLOP | Weight | Speed (GFLOPS) | Latency (us) | Weighted Latency (us) | Trials | Done 
+----------------------------------------------------------------------------------------------------------
+  0 | main | 12582912000 |      1 |            N/A |          N/A |                   N/A |      0 |      
+----------------------------------------------------------------------------------------------------------
+Total trials: 0
+Total latency (us): 0
+
+2025-07-03 10:39:42 [INFO] [task_scheduler.cc:186] TaskScheduler picks Task #0: "main"
+2025-07-03 10:39:42 [INFO] [task_scheduler.cc:199] Sending 1 sample(s) to builder
+2025-07-03 10:39:45 [INFO] [task_scheduler.cc:201] Sending 1 sample(s) to runner
+2025-07-03 10:39:52 [DEBUG] XGB iter   0: tr-p-rmse: 0.000000	tr-a-peak@32: 1.000000	tr-rmse: 0.500000	tr-rmse: 0.500000
+2025-07-03 10:39:52 [DEBUG] XGB iter  25: tr-p-rmse: 0.000000	tr-a-peak@32: 1.000000	tr-rmse: 0.500000	tr-rmse: 0.500000
+2025-07-03 10:39:52 [DEBUG] XGB iter  50: tr-p-rmse: 0.000000	tr-a-peak@32: 1.000000	tr-rmse: 0.500000	tr-rmse: 0.500000
+2025-07-03 10:39:52 [DEBUG] XGB stopped. Best iteration: [0] tr-p-rmse:0.00000	tr-a-peak@32:1.00000	tr-rmse:0.50000	tr-rmse:0.50000 
+2025-07-03 10:39:52 [INFO] [task_scheduler.cc:243] [Updated] Task #0: "main"
+2025-07-03 10:39:52 [INFO] [task_scheduler.cc:326] 
+ ID | Name |        FLOP | Weight | Speed (GFLOPS) | Latency (us) | Weighted Latency (us) | Trials | Done 
+----------------------------------------------------------------------------------------------------------
+  0 | main | 12582912000 |      1 |       121.5287 |  103538.6221 |           103538.6221 |      1 |      
+----------------------------------------------------------------------------------------------------------
+Total trials: 1
+Total latency (us): 103539
+
+2025-07-03 10:39:52 [INFO] [task_scheduler.cc:266] Task #0 has finished. Remaining task(s): 0
+2025-07-03 10:39:52 [INFO] [task_scheduler.cc:326] 
+ ID | Name |        FLOP | Weight | Speed (GFLOPS) | Latency (us) | Weighted Latency (us) | Trials | Done 
+----------------------------------------------------------------------------------------------------------
+  0 | main | 12582912000 |      1 |       121.5287 |  103538.6221 |           103538.6221 |      1 |    Y 
+----------------------------------------------------------------------------------------------------------
+Total trials: 1
+Total latency (us): 103539
+
+2025-07-03 10:39:52 [INFO] LocalBuilder: max_workers = 1
+2025-07-03 10:39:56 [INFO] LocalRunner: max_workers = 1
+2025-07-03 10:40:48 [INFO] Logging directory: /data/theo/projects/Tiling/OPT-einsum/TVM-auto/Kernels/Kronecker/{512, 256, 500, 128}/ms_log_kron_einsum/logs
+2025-07-03 10:40:57 [INFO] [task_scheduler.cc:165] Initializing Task #0: "main"
+2025-07-03 10:40:57 [INFO] [task_scheduler.cc:326] 
+ ID | Name |        FLOP | Weight | Speed (GFLOPS) | Latency (us) | Weighted Latency (us) | Trials | Done 
+----------------------------------------------------------------------------------------------------------
+  0 | main | 12582912000 |      1 |            N/A |          N/A |                   N/A |      0 |      
+----------------------------------------------------------------------------------------------------------
+Total trials: 0
+Total latency (us): 0
+
+2025-07-03 10:40:57 [INFO] [task_scheduler.cc:186] TaskScheduler picks Task #0: "main"
+2025-07-03 10:40:57 [INFO] [task_scheduler.cc:199] Sending 1 sample(s) to builder
+2025-07-03 10:40:59 [INFO] [task_scheduler.cc:201] Sending 1 sample(s) to runner
+2025-07-03 10:41:02 [DEBUG] XGB iter   0: tr-p-rmse: 0.000000	tr-a-peak@32: 1.000000	tr-rmse: 0.500000	tr-rmse: 0.500000
+2025-07-03 10:41:02 [DEBUG] XGB iter  25: tr-p-rmse: 0.000000	tr-a-peak@32: 1.000000	tr-rmse: 0.500000	tr-rmse: 0.500000
+2025-07-03 10:41:02 [DEBUG] XGB iter  50: tr-p-rmse: 0.000000	tr-a-peak@32: 1.000000	tr-rmse: 0.500000	tr-rmse: 0.500000
+2025-07-03 10:41:02 [DEBUG] XGB stopped. Best iteration: [0] tr-p-rmse:0.00000	tr-a-peak@32:1.00000	tr-rmse:0.50000	tr-rmse:0.50000 
+2025-07-03 10:41:02 [INFO] [task_scheduler.cc:243] [Updated] Task #0: "main"
+2025-07-03 10:41:02 [INFO] [task_scheduler.cc:326] 
+ ID | Name |        FLOP | Weight | Speed (GFLOPS) | Latency (us) | Weighted Latency (us) | Trials | Done 
+----------------------------------------------------------------------------------------------------------
+  0 | main | 12582912000 |      1 |       447.3467 |   28127.8743 |            28127.8743 |      1 |      
+----------------------------------------------------------------------------------------------------------
+Total trials: 1
+Total latency (us): 28127.9
+
+2025-07-03 10:41:02 [INFO] [task_scheduler.cc:266] Task #0 has finished. Remaining task(s): 0
+2025-07-03 10:41:02 [INFO] [task_scheduler.cc:326] 
+ ID | Name |        FLOP | Weight | Speed (GFLOPS) | Latency (us) | Weighted Latency (us) | Trials | Done 
+----------------------------------------------------------------------------------------------------------
+  0 | main | 12582912000 |      1 |       447.3467 |   28127.8743 |            28127.8743 |      1 |    Y 
+----------------------------------------------------------------------------------------------------------
+Total trials: 1
+Total latency (us): 28127.9
+
+2025-07-03 10:41:02 [INFO] LocalBuilder: max_workers = 1
+2025-07-03 10:41:06 [INFO] LocalRunner: max_workers = 1
+2025-07-03 10:45:45 [INFO] Logging directory: /data/theo/projects/Tiling/OPT-einsum/TVM-auto/Kernels/Kronecker/{512, 256, 500, 128}/ms_log_kron_einsum/logs
+2025-07-03 10:45:54 [INFO] [task_scheduler.cc:165] Initializing Task #0: "main"
+2025-07-03 10:45:54 [INFO] [task_scheduler.cc:326] 
+ ID | Name |        FLOP | Weight | Speed (GFLOPS) | Latency (us) | Weighted Latency (us) | Trials | Done 
+----------------------------------------------------------------------------------------------------------
+  0 | main | 12582912000 |      1 |            N/A |          N/A |                   N/A |      0 |      
+----------------------------------------------------------------------------------------------------------
+Total trials: 0
+Total latency (us): 0
+
+2025-07-03 10:45:54 [INFO] [task_scheduler.cc:186] TaskScheduler picks Task #0: "main"
+2025-07-03 10:45:54 [INFO] [task_scheduler.cc:199] Sending 1 sample(s) to builder
+2025-07-03 10:45:56 [INFO] [task_scheduler.cc:201] Sending 1 sample(s) to runner
+2025-07-03 10:46:04 [DEBUG] XGB iter   0: tr-p-rmse: 0.000000	tr-a-peak@32: 1.000000	tr-rmse: 0.500000	tr-rmse: 0.500000
+2025-07-03 10:46:04 [DEBUG] XGB iter  25: tr-p-rmse: 0.000000	tr-a-peak@32: 1.000000	tr-rmse: 0.500000	tr-rmse: 0.500000
+2025-07-03 10:46:04 [DEBUG] XGB iter  50: tr-p-rmse: 0.000000	tr-a-peak@32: 1.000000	tr-rmse: 0.500000	tr-rmse: 0.500000
+2025-07-03 10:46:04 [DEBUG] XGB stopped. Best iteration: [0] tr-p-rmse:0.00000	tr-a-peak@32:1.00000	tr-rmse:0.50000	tr-rmse:0.50000 
+2025-07-03 10:46:04 [INFO] [task_scheduler.cc:243] [Updated] Task #0: "main"
+2025-07-03 10:46:04 [INFO] [task_scheduler.cc:326] 
+ ID | Name |        FLOP | Weight | Speed (GFLOPS) | Latency (us) | Weighted Latency (us) | Trials | Done 
+----------------------------------------------------------------------------------------------------------
+  0 | main | 12582912000 |      1 |       117.4838 |  107103.3868 |           107103.3868 |      1 |      
+----------------------------------------------------------------------------------------------------------
+Total trials: 1
+Total latency (us): 107103
+
+2025-07-03 10:46:04 [INFO] [task_scheduler.cc:266] Task #0 has finished. Remaining task(s): 0
+2025-07-03 10:46:04 [INFO] [task_scheduler.cc:326] 
+ ID | Name |        FLOP | Weight | Speed (GFLOPS) | Latency (us) | Weighted Latency (us) | Trials | Done 
+----------------------------------------------------------------------------------------------------------
+  0 | main | 12582912000 |      1 |       117.4838 |  107103.3868 |           107103.3868 |      1 |    Y 
+----------------------------------------------------------------------------------------------------------
+Total trials: 1
+Total latency (us): 107103
+
+2025-07-03 10:46:04 [INFO] LocalBuilder: max_workers = 1
+2025-07-03 10:46:08 [INFO] LocalRunner: max_workers = 1
